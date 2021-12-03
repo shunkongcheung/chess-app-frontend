@@ -8,8 +8,8 @@ const Home: NextPage = ({ chessBoard }: any) => {
   return (<ChessBoardDetail chessBoard={chessBoard}/>)
 }
 
-export const getServerSideProps = async () => {
-  const chessBoard = await fetchChessBoard("")
+export const getServerSideProps = async ({query}) => {
+  const chessBoard = await fetchChessBoard(query.shortHash)
   return {
     props: {
       chessBoard
@@ -18,3 +18,4 @@ export const getServerSideProps = async () => {
 }
 
 export default Home
+
