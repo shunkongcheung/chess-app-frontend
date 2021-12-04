@@ -56,7 +56,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
           <ChessPiece
             handleClick={handleClick}
             pieceCode={pieceCode}
-            isSelected={isSelected}
+            isSelected={isSelected || false}
           />
         </PieceContainer>
       );
