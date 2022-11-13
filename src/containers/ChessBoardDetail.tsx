@@ -4,7 +4,17 @@ import Link from "next/link";
 
 import { Board, Side } from "../types";
 import ChessBoard from "../components/ChessBoard";
-import { fetchChessBoard } from "../utils";
+import {
+  getAllNextPositions,
+  getBoardWinnerAndScore,
+  getHashFromBoard,
+  getMovedBoard,
+} from "../chess";
+
+interface IProps {
+  board: Board;
+  toBeMovedBy: Side;
+}
 
 const Container = styled.div`
   max-width: 1080px;
@@ -61,105 +71,53 @@ const TabItem = styled.div`
   margin-bottom: 2px;
 `;
 
-const TabBtn = styled.button<{ active: boolean }>`
-  background: transparent;
-  border: 1px solid #eee;
-  border-top-left-radius: 3px;
-  border-top-right-radius: 3px;
-  padding: 5px;
-  width: 50%;
-  color: #777;
-  font-weight: 500;
-
-  &:hover {
-    color: #333;
-    cursor: pointer;
-  }
-  ${({ active }: any) => (active ? "font-weight: bold;" : "")}
-  ${({ active }: any) => (active ? "color: #222;" : "")}
-${({ active }: any) => (active ? "border-color: #aaa;" : "")}
-`;
-
-interface ChessMove {
-  fromRow: number;
-  fromCol: number;
-  fromPiece: string;
-
-  toRow: number;
-  toCol: number;
-  toPiece: string;
-
-  movedBy: Side;
-  qScore: number;
-  fromBoard: ChessBoard;
-  toBoard: ChessBoard;
-}
-
-interface ChessBoard {
-  id: number;
-  board: Board;
-  shortHash: string;
-  score: number;
-  toBeMovedBy: Side;
-  froms?: Array<ChessMove>;
-  tos?: Array<ChessMove>;
-}
-
-interface ChessBaordDetailProps {
-  chessBoard: ChessBoard;
-}
-
-const ChessBoardDetail = ({ chessBoard }: ChessBaordDetailProps) => {
-  const [selected, setSelected] = React.useState("from");
+const ChessBoardDetail = ({ board, toBeMovedBy }: IProps) => {
+  const shortHash = getHashFromBoard(board);
+  const [winner, score] = getBoardWinnerAndScore(board);
+  const tos = getAllNextPositions(board, toBeMovedBy === Side.Top);
+  const nextSide = toBeMovedBy === Side.Top ? Side.Bottom : Side.Top;
 
   return (
     <Container>
       <Card>
-        <ChessBoard board={chessBoard.board} />
+        <ChessBoard board={board} />
         <Desc>
           <Title>To be moved by</Title>
-          <Value>{chessBoard.toBeMovedBy}</Value>
+          <Value>{toBeMovedBy}</Value>
         </Desc>
         <Desc>
           <Title>Hash</Title>
-          <Value>{chessBoard.shortHash}</Value>
+          <Value>{shortHash}</Value>
+        </Desc>
+        <Desc>
+          <Title>Winner</Title>
+          <Value>{winner}</Value>
         </Desc>
         <Desc>
           <Title>Score</Title>
-          <Value>{chessBoard.score}</Value>
+          <Value>{score}</Value>
         </Desc>
       </Card>
       <TabContainer>
-        <TabBtn
-          active={selected === "from"}
-          onClick={() => setSelected("from")}
-        >
-          From
-        </TabBtn>
-        <TabBtn active={selected === "to"} onClick={() => setSelected("to")}>
-          To
-        </TabBtn>
         <TabControl>
           <TabContent>
-            {selected === "from"
-              ? (chessBoard.froms || []).map((chessMove, idx) => (
-                  <TabItem key={`From-${chessMove.fromBoard.shortHash}-${idx}`}>
-                    <Link href={`/${chessMove.fromBoard.shortHash}`}>
-                      <a>
-                        <ChessBoard board={chessMove.fromBoard.board} />
-                      </a>
-                    </Link>
-                  </TabItem>
-                ))
-              : (chessBoard.tos || []).map((chessMove, idx) => (
-                  <TabItem key={`To-${chessMove.toBoard.shortHash}-${idx}`}>
-                    <Link href={`/${chessMove.toBoard.shortHash}`}>
-                      <a>
-                        <ChessBoard board={chessMove.toBoard.board} />
-                      </a>
-                    </Link>
-                  </TabItem>
-                ))}
+            {(tos || []).map((chessMove, idx) => {
+              const nextBoard = getMovedBoard(
+                board,
+                chessMove.from,
+                chessMove.to
+              );
+              const shortHash = getHashFromBoard(nextBoard);
+              return (
+                <TabItem key={`To-${shortHash}-${idx}`}>
+                  <Link href={`/${nextSide}/${shortHash}`}>
+                    <a>
+                      <ChessBoard board={nextBoard} />
+                    </a>
+                  </Link>
+                </TabItem>
+              );
+            })}
           </TabContent>
         </TabControl>
       </TabContainer>
