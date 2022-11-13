@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from "react";
 import styled from "styled-components";
 
-import { Board, Position } from '../../types'
+import { Board, Position } from "../../types";
 import ChessPiece from "../ChessPiece";
 
 interface ChessBoardProps {
