@@ -1,20 +1,15 @@
-import type { NextPage } from 'next';
+import { getInitialBoard, getHashFromBoard } from "../chess";
+import { Side } from "../types";
 
-import ChessBoardDetail from '../containers/ChessBoardDetail';
-import {fetchChessBoard} from '../utils';
-
-
-const Home: NextPage = ({ chessBoard }: any) => {
-  return (<ChessBoardDetail chessBoard={chessBoard}/>)
+export default () => {
+  return <></>;
 }
 
-export const getServerSideProps = async () => {
-  const chessBoard = await fetchChessBoard("")
+export async function getServerSideProps() {
   return {
-    props: {
-      chessBoard
-    }
+    redirect: {
+      destination:  `/${Side.Bottom}/${getHashFromBoard(getInitialBoard())}`,
+      permanent: true,
+    },
   }
 }
-
-export default Home
