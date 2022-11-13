@@ -61,7 +61,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
         </PieceContainer>
       );
     },
-    [boardWidth, selectedChess]
+    [boardWidth, selectedChess, handleSelect]
   );
 
   const renderBoardRow = useCallback(
