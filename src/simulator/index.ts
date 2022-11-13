@@ -52,30 +52,19 @@ const sortNodes = (nodes: Array<Node>) => {
   return nodes;
 };
 
-export const getBestNodeForStarterBoard = (
-  nodes: Array<Node>,
-  side: Side
-): Node => {
-  if (nodes.length === 0) {
-    throw Error();
-  }
-
-  return nodes.reduce((prevNode, currNode) => {
-    const isMoreAppealingNode =
-      side === Side.Top
-        ? currNode.score > prevNode.score
-        : currNode.score < prevNode.score;
-    return isMoreAppealingNode ? currNode : prevNode;
-  }, nodes[0]);
-};
-
 const simulate = ({ startSide, nodes }: State): Ret => {
   // exception case
-  if (!nodes.length) return { nodes: [] };
+  if (!nodes.length) {
+    return { nodes: [] };
+  }
 
   // pop winning node
   sortNodes(nodes);
   const selectedNode = nodes[0];
+
+  if(selectedNode.winner !== Side.None) {
+    return { nodes };
+  }
 
   const secondSide = startSide === Side.Top ? Side.Bottom : Side.Top;
   const selectedSide = selectedNode.level % 2 === 0 ? startSide : secondSide;
