@@ -14,9 +14,9 @@ export enum Piece {
 export type Position = [number, number];
 
 export enum Side {
-  Top,
-  Bottom,
-  None,
+  Top = "top",
+  Bottom = "bottom",
+  None = "none",
 }
 
 export interface Move {

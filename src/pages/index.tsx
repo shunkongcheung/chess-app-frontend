@@ -1,7 +1,7 @@
 import { getInitialBoard, getHashFromBoard } from "../chess";
 import { Side } from "../types";
 
-export default () => {
+export default function Index () {
   return <></>;
 }
 

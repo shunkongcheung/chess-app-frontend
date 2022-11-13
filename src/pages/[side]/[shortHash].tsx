@@ -1,10 +1,10 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
 
 import { getBoardFromHash } from "../../chess";
-import ChessBoardDetail from "../../containers/ChessBoardDetail";
+import Simulator from "../../containers/Simulator";
 
 const Home: NextPage = ({ board, side }: any) => {
-  return <ChessBoardDetail board={board} toBeMovedBy={side} />;
+  return <Simulator board={board} toBeMovedBy={side} />;
 };
 
 export const getServerSideProps = ({
