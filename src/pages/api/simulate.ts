@@ -73,12 +73,27 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const startTime = performance.now();
   const openSet = getOpenSetFromNetworkOpenSet(networkOpenSet);
+  const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
-  let result = run({ levelZeroSide, openSet, maximumLevel });
+  let result = run({
+    levelZeroScore: levelZeroNode.score,
+    levelZeroSide,
+    openSet,
+    maximumLevel,
+  });
   for (let index = 1; index < runTimes; index++) {
-    result = run({ ...result, levelZeroSide, maximumLevel });
+    result = run({
+      ...result,
+      levelZeroScore: levelZeroNode.score,
+      levelZeroSide,
+      maximumLevel,
+    });
     if (index % 100 === 0)
-      console.log(`${index}: ${performance.now() - startTime}ms`);
+      console.log(
+        `${index}: ${performance.now() - startTime}ms - ${
+          result.openSet.length
+        }`
+      );
   }
   const endTime = performance.now();
 
@@ -90,6 +105,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     maximumLevel,
   };
 
-  console.log(`finished (${runTimes}}: ${performance.now() - startTime}ms`);
+  console.log(
+    `finished (${runTimes}}: ${performance.now() - startTime}ms - ${
+      result.openSet.length
+    }`
+  );
   res.status(200).json(response);
 }
