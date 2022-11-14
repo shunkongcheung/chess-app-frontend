@@ -11,6 +11,7 @@ import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
 
 interface Args {
+  levelZeroScore: number;
   levelZeroSide: Side;
   openSet: Array<Node>;
   maximumLevel: number;
@@ -23,12 +24,18 @@ interface Ret {
 }
 
 const getPointer = (openSet: Array<Node>): Node | undefined => {
-  const copied: Array<Node> = [...openSet];
-  copied.sort(nodeSorter);
-  return copied.find((node) => !node.isTerminated && node.isOpenForCalculation);
+  openSet.sort(nodeSorter);
+  return openSet.find(
+    (node) => !node.isTerminated && node.isOpenForCalculation
+  );
 };
 
-const run = ({ levelZeroSide, openSet, maximumLevel }: Args): Ret => {
+const run = ({
+  levelZeroScore,
+  levelZeroSide,
+  openSet,
+  maximumLevel,
+}: Args): Ret => {
   const pointer = getPointer(openSet);
   if (!pointer) {
     return { openSet, nextNodes: [] };
@@ -37,7 +44,6 @@ const run = ({ levelZeroSide, openSet, maximumLevel }: Args): Ret => {
   pointer.isOpenForCalculation = false;
 
   let nextNodes: Array<Node> = pointer.children;
-  const levelZeroScore = openSet[0].score;
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
   const pointerSide = pointer.level % 2 === 0 ? levelZeroSide : levelOneSide;
   const isPointerSideTop = pointerSide === Side.Top;
@@ -52,16 +58,19 @@ const run = ({ levelZeroSide, openSet, maximumLevel }: Args): Ret => {
     const existingBoardHashs = openSet.map((node) =>
       getHashFromBoard(node.board)
     );
+    const isNextNodeAtMaxLevel = level >= maximumLevel;
+    const setLength = openSet.length;
 
     nextNodes = nextBoards
-      .map((board) => {
+      .map((board, index) => {
         const [winner, score] = getBoardWinnerAndScore(board);
         const node: Node = {
           board,
           level,
           score,
           winner,
-          isTerminated: winner !== Side.None,
+          isTerminated: isNextNodeAtMaxLevel || winner !== Side.None,
+          index: setLength + index,
           parent: pointer,
           priority: getPriorityScore({
             level,
