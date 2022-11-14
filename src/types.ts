@@ -26,6 +26,8 @@ export interface Move {
 
 export interface Node {
   board: Board;
+  // order that the node is inserted
+  index: number;
   // level 0: start board
   // level 1: all possible options by starter
   // caller shall feed at least from level one
