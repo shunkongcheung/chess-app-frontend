@@ -1,56 +1,95 @@
-
 import type { NextApiRequest, NextApiResponse } from "next";
-import simulate, { Node } from "../../simulator";
-import { Side } from "../../types";
+import { getHashFromBoard } from "../../chess";
+import { run } from "../../simulator";
+import { Side, Node } from "../../types";
 
-interface Payload {
-  pageNum?: number; // default 1
-  pageSize?: number; // default 50
+interface NetworkNode extends Omit<Node, "parent" | "children"> {
+  parent: string;
+  children: Array<string>;
+}
+
+export interface Payload {
   runTimes?: number; // default 1
-  toBeMovedBy: Side;
-  nodes: Array<Node>;
+  levelZeroSide: Side;
+  openSet: Array<NetworkNode>;
+  maximumLevel?: number; // default 5
 }
 
-interface Response {
-  nodeCount: number;
-  bestNode: Node;
-  nodes: Array<Node>;
-  debug?: {
-    selectedNode: Node;
-    nextNodes: Array<Node>;
-    mostUpsettingNode: Node;
-  };
+export interface Result {
   timeTaken: number;
+  pointer: string;
+  openSet: Array<NetworkNode>;
+  nextNodes: Array<NetworkNode>;
+  maximumLevel: number;
 }
+
+export const getNetworkNodeFromDataNode = (node: Node): NetworkNode => ({
+  ...node,
+  parent: node.parent ? getHashFromBoard(node.parent.board) : "",
+  children: node.children.map((item) => getHashFromBoard(item.board)),
+});
+
+export const getOpenSetFromNetworkOpenSet = (
+  networkOpenSet: Array<NetworkNode>
+): Array<Node> => {
+  const openSet: Array<Node> = networkOpenSet.map((node) => ({
+    ...node,
+    parent: undefined,
+    children: [],
+  }));
+
+  openSet.map((node, index) => {
+    const networkNode = networkOpenSet[index];
+    node.parent = openSet.find(
+      (item) => getHashFromBoard(item.board) === networkNode.parent
+    );
+    node.children = openSet.filter((node) =>
+      networkNode.children.includes(getHashFromBoard(node.board))
+    );
+  });
+
+  return openSet;
+};
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const payload = JSON.parse(req.body) as Payload;
-  const {pageNum = 1, pageSize = 1, runTimes = 1, toBeMovedBy, nodes  } = payload;
+  const {
+    runTimes = 1,
+    levelZeroSide,
+    openSet: networkOpenSet,
+    maximumLevel = 5,
+  } = payload;
+
+  if (runTimes < 1) {
+    const response: Result = {
+      timeTaken: 0,
+      pointer: "",
+      openSet: networkOpenSet,
+      nextNodes: [],
+      maximumLevel,
+    };
+    return res.status(200).json(response);
+  }
 
   const startTime = performance.now();
-  let result = simulate({ startSide: toBeMovedBy, nodes });
+  const openSet = getOpenSetFromNetworkOpenSet(networkOpenSet);
+
+  let result = run({ levelZeroSide, openSet, maximumLevel });
   for (let index = 1; index < runTimes; index++) {
-    result = simulate({ startSide: toBeMovedBy, nodes: result.nodes });
-    if(index % 100 === 0) console.log(`${index}: ${performance.now() - startTime}ms`);
+    result = run({ ...result, levelZeroSide, maximumLevel });
+    if (index % 100 === 0)
+      console.log(`${index}: ${performance.now() - startTime}ms`);
   }
   const endTime = performance.now();
 
-  const bestNode = result.nodes.reduce((prev, curr) => {
-    const isBetter = toBeMovedBy === Side.Top ?
-      curr.score > prev.score
-    : curr.score < prev.score;
-
-    return isBetter ? curr : prev;
-  }, result.nodes[0]);
-
-  const response: Response = {
-    nodeCount: result.nodes.length,
-    bestNode,
-    nodes: result.nodes.slice(pageSize * (pageNum - 1), pageSize * pageNum),
-    debug: result.debug,
+  const response: Result = {
+    pointer: result.pointer ? getHashFromBoard(result.pointer.board) : "",
+    openSet: result.openSet.map(getNetworkNodeFromDataNode),
+    nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
     timeTaken: Math.round(endTime - startTime),
+    maximumLevel,
   };
 
-  console.log(`${performance.now() - startTime}ms`);
-  res.status(200).json(response)
+  console.log(`finished (${runTimes}}: ${performance.now() - startTime}ms`);
+  res.status(200).json(response);
 }
