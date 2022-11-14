@@ -1,38 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import {
-  getBoardWinnerAndScore,
-  getHashFromBoard,
-  getMovedBoard,
-  getAllNextPositions,
-} from "../chess";
-import { Node } from "../simulator";
-import { Board, Side } from "../types";
+import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import { Board, Side, Node } from "../types";
 import ChessBoard from "../components/ChessBoard";
+import {
+  getNetworkNodeFromDataNode,
+  getOpenSetFromNetworkOpenSet,
+  Payload,
+  Result,
+} from "../pages/api/simulate";
+import { nodeSorter } from "../simulator";
 
 interface IProps {
   board: Board;
   toBeMovedBy: Side;
 }
 
-interface Response {
-  nodeCount: number;
-  bestNode: Node;
-  nodes: Array<Node>;
-  debug?: {
-    selectedNode: Node;
-    nextNodes: Array<Node>;
-    mostUpsettingNode: Node;
-  };
-  timeTaken: number;
-}
-
-interface State extends Omit<Response, "bestNode"> {
-  bestNode?: Node;
-  pageNum: number;
-  showInitalBoard: boolean;
+interface State extends Omit<Result, "openSet" | "nextNodes"> {
+  openSet: Array<Node>;
+  nextNodes: Array<Node>; // debug only
   times: number;
+  controls: {
+    pageNum: number;
+    isSorted: boolean;
+    isOpenOnly: boolean;
+  };
 }
 
 const Container = styled.div`
@@ -103,84 +96,94 @@ const PAGE_SIZE = 500;
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
   navigator.clipboard.writeText(text);
-}
+};
 
-const fetchData = async (nodes: Array<Node>, pageNum: number, toBeMovedBy: Side, runTimes = 1) => {
+const fetchData = async (payload: Payload) => {
   const response = await fetch("/api/simulate", {
     method: "POST",
-    body: JSON.stringify({
-      pageNum,
-      pageSize: PAGE_SIZE,
-      runTimes,
-      toBeMovedBy,
-      nodes,
-    })
+    body: JSON.stringify(payload),
   });
-  const result = await response.json() as Response;
+  const result = (await response.json()) as Result;
   return result;
 };
 
-const Simulator = ({ board, toBeMovedBy }: IProps) => {
-  const initialBoards = useRef(getAllNextPositions(board, toBeMovedBy === Side.Top).map(({ from, to }) => getMovedBoard(board, from, to)));
-  const initialNodes = useRef<Array<Node>>([]);
-
-  const [state, setState] = useState<State>({
-    pageNum: 1,
-    nodeCount: 0,
-    showInitalBoard: false,
-    nodes: [],
-    times: 0,
-    timeTaken: 0,
+const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
+  const [state, setState] = useState<State>((): State => {
+    const openSet = [
+      {
+        board,
+        level: 0,
+        score: getBoardWinnerAndScore(board)[1],
+        winner: Side.None,
+        isTerminated: false,
+        priority: 0,
+        children: [],
+        isOpenForCalculation: true,
+      },
+    ];
+    return {
+      openSet,
+      pointer: "",
+      nextNodes: [],
+      times: 0,
+      timeTaken: 0,
+      maximumLevel: 0,
+      controls: {
+        pageNum: 1,
+        isSorted: false,
+        isOpenOnly: false,
+      },
+    };
   });
-
 
   const handleClick = useCallback(
     async (pageNum: number, times: number) => {
-      const response = await fetchData(initialNodes.current, pageNum, toBeMovedBy, times);
-      setState(oldState => ({...oldState, ...response, times , pageNum }));
+      const { openSet } = state;
+      const networkOpenSet = openSet.map(getNetworkNodeFromDataNode);
+
+      const response = await fetchData({
+        openSet: networkOpenSet,
+        levelZeroSide,
+      });
+
+      const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
+      setState((oldState) => ({
+        ...oldState,
+        pointer: response.pointer,
+        openSet: newOpenSet,
+        nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
+        times,
+        pageNum,
+      }));
     },
-    [toBeMovedBy]
+    [state, levelZeroSide]
   );
 
-  const isFetched = useRef(false);
-  useEffect(() => {
-    if(isFetched.current) {
-      return;
+  const prevPointer = state.openSet.find(
+    (item) => getHashFromBoard(item.board) === state.pointer
+  );
+  const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
+
+  const renderOpenSet = useMemo<Array<Node>>(() => {
+    let newSet = [...state.openSet];
+    if (state.controls.isSorted) {
+      newSet.sort(nodeSorter);
     }
-    isFetched.current = true;
+    if (state.controls.isOpenOnly) {
+      newSet = newSet.filter(
+        (item) => item.isOpenForCalculation && !item.isTerminated
+      );
+    }
 
-    const nodes = initialBoards.current.map((nextBoard) => {
-      const [winner, score] = getBoardWinnerAndScore(nextBoard);
-      return {
-        board: nextBoard,
-        level: 1,
-        score,
-        levelOneBoard: nextBoard,
-        rankingScore: toBeMovedBy === Side.Bottom ? -score : score,
-        winner,
-      };
-    });
+    return newSet.slice(
+      (state.controls.pageNum - 1) * PAGE_SIZE,
+      state.controls.pageNum * PAGE_SIZE
+    );
+  }, [state]);
 
-    nodes.sort((left, right) => {
-      const scoreLeft = left.rankingScore;
-      const scoreRight = right.rankingScore;
-
-      if (scoreLeft > scoreRight) return -1;
-      else if (scoreLeft === scoreRight) return 0;
-      else return 1;
-    });
-    initialNodes.current = nodes;
-
-    (async() => {
-      const TIMES = 100;
-      const response = await fetchData(initialNodes.current, 1, toBeMovedBy, TIMES);
-      setState(oldState => ({...oldState, ...response, times: oldState.times + TIMES }));
-    })()
-
-  }, [board, toBeMovedBy, setState]);
-
-  const isPrevPageAvailable = state.pageNum > 1;
-  const isNextPageAvailable = state.pageNum < state.nodeCount / PAGE_SIZE;
+  const isPrevPageAvailable = state.controls.pageNum > 1;
+  const isNextPageAvailable =
+    state.controls.pageNum < renderOpenSet.length / PAGE_SIZE;
 
   return (
     <Container>
@@ -191,121 +194,149 @@ const Simulator = ({ board, toBeMovedBy }: IProps) => {
               <ChessBoard board={board} />
               <Desc>
                 <Title>To be moved by</Title>
-                <Value>{toBeMovedBy}</Value>
+                <Value>{levelZeroSide}</Value>
               </Desc>
-            </Card>
-            <Desc>
-              <Title>Secondary</Title>
-              <Value>
-                <button onClick={() => setState((old) => ({ ...old, showInitalBoard: !old.showInitalBoard }))}>
-                  {state.showInitalBoard ? "initial" : "debug"}
-                </button>
-              </Value>
-            </Desc>
-            <Desc>
-              <Title>Simulate</Title>
-              <Value>
-                <button onClick={() => handleClick(1, state.times + 1)}>run</button>
-              </Value>
-            </Desc>
-            <Desc>
-              <Title>#</Title>
-              <Value>{state.times}</Value>
-            </Desc>
-            <Desc>
-              <Title>Time</Title>
-              <Value>{state.timeTaken} ms</Value>
-            </Desc>
-            <Desc>
-              <Title>Count</Title>
-              <Value>{state.nodeCount}</Value>
-            </Desc>
-            <Desc>
-              <Title>Page</Title>
-              <Value>{state.pageNum}</Value>
-            </Desc>
-            <Desc>
-              <Title><button disabled={!isPrevPageAvailable} onClick={() => isPrevPageAvailable && handleClick(state.pageNum - 1, state.times)}>prev</button></Title>
-              <Value><button disabled={!isNextPageAvailable} onClick={() => isNextPageAvailable && handleClick(state.pageNum + 1, state.times)}>next</button></Value>
-            </Desc>
-          </div>
-          <div>
-            {state.bestNode &&
-            <Card>
-              <div onClick={() => state.bestNode && copyHash(state.bestNode.board)}>
-                <ChessBoard board={state.bestNode.board} />
-              </div>
               <Desc>
                 <Title>Score</Title>
-                <Value>{state.bestNode.score}</Value>
+                <Value>{getBoardWinnerAndScore(board)[1]}</Value>
               </Desc>
               <Desc>
-                <Title>Ranking Score</Title>
-                <Value>{state.bestNode.rankingScore}</Value>
+                <Title>#</Title>
+                <Value>{state.times}</Value>
               </Desc>
               <Desc>
-                <Title>From</Title>
-                <Value>{initialBoards.current.findIndex((board) => state.bestNode && getHashFromBoard(board) === getHashFromBoard(state.bestNode.levelOneBoard))}</Value>
+                <Title>Time</Title>
+                <Value>{state.timeTaken} ms</Value>
+              </Desc>
+              <Desc>
+                <Title>Count</Title>
+                <Value>{state.openSet.length}</Value>
+              </Desc>
+              <Desc>
+                <Title>Maximum level</Title>
+                <Value>{state.maximumLevel}</Value>
+              </Desc>
+              <Desc>
+                <Title>Page</Title>
+                <Value>{state.controls.pageNum}</Value>
+              </Desc>
+              <Desc>
+                <Title>
+                  <button
+                    onClick={() =>
+                      setState((old) => ({
+                        ...old,
+                        controls: {
+                          ...old.controls,
+                          isOpenOnly: !old.controls.isOpenOnly,
+                        },
+                      }))
+                    }
+                  >
+                    Open: {`${state.controls.isOpenOnly}`}
+                  </button>
+                </Title>
+                <Value>
+                  <button
+                    onClick={() =>
+                      setState((old) => ({
+                        ...old,
+                        controls: {
+                          ...old.controls,
+                          isSorted: !old.controls.isSorted,
+                        },
+                      }))
+                    }
+                  >
+                    Sorted: {`${state.controls.isSorted}`}
+                  </button>
+                </Value>
+              </Desc>
+              <Desc>
+                <Title>
+                  <button
+                    disabled={!isPrevPageAvailable}
+                    onClick={() =>
+                      isPrevPageAvailable &&
+                      handleClick(state.controls.pageNum - 1, state.times)
+                    }
+                  >
+                    prev
+                  </button>
+                </Title>
+                <Value>
+                  <button
+                    disabled={!isNextPageAvailable}
+                    onClick={() =>
+                      isNextPageAvailable &&
+                      handleClick(state.controls.pageNum + 1, state.times)
+                    }
+                  >
+                    next
+                  </button>
+                </Value>
+              </Desc>
+              <Desc>
+                <Title>Simulate</Title>
+                <Value>
+                  <button onClick={() => handleClick(1, state.times + 1)}>
+                    run
+                  </button>
+                </Value>
               </Desc>
             </Card>
-            }
           </div>
           <div>
-            {state.debug && (
+            {prevPointer && (
               <Card>
-              <div onClick={() => state.debug?.selectedNode && copyHash(state.debug.selectedNode.board)}>
-                <ChessBoard board={state.debug.selectedNode.board} />
-              </div>
+                <div onClick={() => copyHash(prevPointer.board)}>
+                  <ChessBoard board={prevPointer.board} />
+                </div>
+                <Desc>
+                  <Title>To be moved by</Title>
+                  <Value>
+                    {prevPointer.level % 2 === 0 ? levelZeroSide : levelOneSide}
+                  </Value>
+                </Desc>
                 <Desc>
                   <Title>Score</Title>
-                  <Value>{state.debug.selectedNode.score}</Value>
+                  <Value>{prevPointer.score}</Value>
                 </Desc>
                 <Desc>
-                  <Title>Ranking Score</Title>
-                  <Value>{state.debug.selectedNode.rankingScore}</Value>
+                  <Title>Winner</Title>
+                  <Value>{prevPointer.winner}</Value>
                 </Desc>
                 <Desc>
-                  <Title>Is same</Title>
-                  <Value>
-                    {state.debug.mostUpsettingNode === state.debug.selectedNode
-                      ? "true"
-                      : "false"}
-                  </Value>
+                  <Title>Level</Title>
+                  <Value>{prevPointer.level}</Value>
+                </Desc>
+                <Desc>
+                  <Title>Priority</Title>
+                  <Value>{prevPointer.priority}</Value>
+                </Desc>
+                <Desc>
+                  <Title>Is Open</Title>
+                  <Value>{`${prevPointer.isOpenForCalculation}`}</Value>
+                </Desc>
+                <Desc>
+                  <Title>Is Terminated</Title>
+                  <Value>{`${prevPointer.isTerminated}`}</Value>
                 </Desc>
               </Card>
             )}
           </div>
-          <div>
-            {state.debug &&
-              state.debug.mostUpsettingNode !== state.debug.selectedNode && (
-                <Card>
-              <div onClick={() => state.debug?.mostUpsettingNode && copyHash(state.debug.mostUpsettingNode.board)}>
-                  <ChessBoard board={state.debug.mostUpsettingNode.board} />
-              </div>
-                  <Desc>
-                    <Title>Score</Title>
-                    <Value>{state.debug.mostUpsettingNode.score}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Ranking Score</Title>
-                    <Value>{state.debug.mostUpsettingNode.rankingScore}</Value>
-                  </Desc>
-                </Card>
-            )}
-          </div>
         </MainContent>
         <TabControl>
-          {state.nodes.map((node, index) => {
-            const secondSide =
-              toBeMovedBy === Side.Top ? Side.Bottom : Side.Top;
+          {renderOpenSet.map((node, index) => {
             const selectedSide =
-              node.level % 2 === 0 ? toBeMovedBy : secondSide;
+              node.level % 2 === 0 ? levelZeroSide : levelOneSide;
+
             return (
               <TabItem key={index}>
                 <Card>
-              <div onClick={() => copyHash(node.board)}>
-                  <ChessBoard board={node.board} />
-              </div>
+                  <div onClick={() => copyHash(node.board)}>
+                    <ChessBoard board={node.board} />
+                  </div>
                   <Desc>
                     <Title>To be moved by</Title>
                     <Value>{selectedSide}</Value>
@@ -313,10 +344,6 @@ const Simulator = ({ board, toBeMovedBy }: IProps) => {
                   <Desc>
                     <Title>Score</Title>
                     <Value>{node.score}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Ranking Score</Title>
-                    <Value>{node.rankingScore}</Value>
                   </Desc>
                   <Desc>
                     <Title>Winner</Title>
@@ -327,12 +354,16 @@ const Simulator = ({ board, toBeMovedBy }: IProps) => {
                     <Value>{node.level}</Value>
                   </Desc>
                   <Desc>
-                    <Title>From</Title>
-                    <Value>
-                      {initialBoards.current.findIndex(
-                        (board) => getHashFromBoard(board) === getHashFromBoard(node.levelOneBoard)
-                      )}
-                    </Value>
+                    <Title>Priority</Title>
+                    <Value>{node.priority}</Value>
+                  </Desc>
+                  <Desc>
+                    <Title>Is Open</Title>
+                    <Value>{`${node.isOpenForCalculation}`}</Value>
+                  </Desc>
+                  <Desc>
+                    <Title>Is Terminated</Title>
+                    <Value>{`${node.isTerminated}`}</Value>
                   </Desc>
                 </Card>
               </TabItem>
@@ -341,33 +372,25 @@ const Simulator = ({ board, toBeMovedBy }: IProps) => {
         </TabControl>
       </LeftColumn>
       <SecondaryContainer>
-        {state.showInitalBoard
-          ? initialBoards.current.slice(0, 50).map((board, index) => (
-            <Card key={`SecondaryBoards-${index}`}>
-              <div onClick={() => copyHash(board)}>
-                <ChessBoard board={board} />
-              </div>
-              <Desc>
-                <Title>Index</Title>
-                <Value>{index}</Value>
-              </Desc>
-            </Card>
-          ))
-          : (state.debug?.nextNodes || []).map((node, index) => (
-            <Card key={`NextNode-${index}`}>
-              <div onClick={() => copyHash(board)}>
-                <ChessBoard board={node.board} />
-              </div>
-              <Desc>
-                <Title>Level</Title>
-                <Value>{node.level}</Value>
-              </Desc>
-              <Desc>
-                <Title>Score</Title>
-                <Value>{node.score}</Value>
-              </Desc>
-            </Card>
-          ))}
+        {(state.nextNodes || []).map((node, index) => (
+          <Card key={`NextNode-${index}`}>
+            <div onClick={() => copyHash(board)}>
+              <ChessBoard board={node.board} />
+            </div>
+            <Desc>
+              <Title>Level</Title>
+              <Value>{node.level}</Value>
+            </Desc>
+            <Desc>
+              <Title>Score</Title>
+              <Value>{node.score}</Value>
+            </Desc>
+            <Desc>
+              <Title>Priority</Title>
+              <Value>{node.priority}</Value>
+            </Desc>
+          </Card>
+        ))}
       </SecondaryContainer>
     </Container>
   );
