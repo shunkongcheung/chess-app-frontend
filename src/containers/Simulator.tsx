@@ -117,6 +117,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
   const [state, setState] = useState<State>((): State => {
     const openSet = [
       {
+        index: 0,
         board,
         level: 0,
         score: getBoardWinnerAndScore(board)[1],
@@ -160,18 +161,20 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
         pointer: response.pointer,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
+        timeTaken: response.timeTaken,
         times: oldState.times + runTimes,
       }));
     },
     [state, levelZeroSide]
   );
 
-  const isInitialized = useRef(false);
-  useEffect(() => {
-    if (isInitialized.current) return;
-    isInitialized.current = true;
-    handleClick(100);
-  }, [handleClick]);
+  // const isInitialized = useRef(false);
+  // useEffect(() => {
+  //   if (isInitialized.current) return;
+  //   isInitialized.current = true;
+  //   const TIMES = 2000;
+  //   handleClick(TIMES);
+  // }, [handleClick]);
 
   const prevPointer = state.openSet.find(
     (item) => getHashFromBoard(item.board) === state.pointer
@@ -180,9 +183,11 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
 
   const renderOpenSet = useMemo<Array<Node>>(() => {
     let newSet = [...state.openSet];
+
     if (state.controls.isSorted) {
       newSet.sort(nodeSorter);
     }
+
     if (state.controls.isOpenOnly) {
       newSet = newSet.filter(
         (item) => item.isOpenForCalculation && !item.isTerminated
@@ -309,9 +314,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>Simulate</Title>
                 <Value>
-                  <button onClick={() => handleClick(state.times + 1)}>
-                    run
-                  </button>
+                  <button onClick={() => handleClick(1000)}>run</button>
                 </Value>
               </Desc>
             </Card>
