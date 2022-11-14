@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -91,7 +97,7 @@ const TabItem = styled.div`
   width: 250px;
 `;
 
-const PAGE_SIZE = 500;
+const PAGE_SIZE = 50;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -137,13 +143,14 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
   });
 
   const handleClick = useCallback(
-    async (pageNum: number, times: number) => {
+    async (runTimes: number) => {
       const { openSet } = state;
       const networkOpenSet = openSet.map(getNetworkNodeFromDataNode);
 
       const response = await fetchData({
         openSet: networkOpenSet,
         levelZeroSide,
+        runTimes,
       });
 
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
@@ -153,12 +160,18 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
         pointer: response.pointer,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
-        times,
-        pageNum,
+        times: oldState.times + runTimes,
       }));
     },
     [state, levelZeroSide]
   );
+
+  const isInitialized = useRef(false);
+  useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+    handleClick(100);
+  }, [handleClick]);
 
   const prevPointer = state.openSet.find(
     (item) => getHashFromBoard(item.board) === state.pointer
@@ -176,15 +189,17 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       );
     }
 
-    return newSet.slice(
-      (state.controls.pageNum - 1) * PAGE_SIZE,
-      state.controls.pageNum * PAGE_SIZE
-    );
+    return newSet;
   }, [state]);
 
+  const pagedSet = renderOpenSet.slice(
+    (state.controls.pageNum - 1) * PAGE_SIZE,
+    state.controls.pageNum * PAGE_SIZE
+  );
+
   const isPrevPageAvailable = state.controls.pageNum > 1;
-  const isNextPageAvailable =
-    state.controls.pageNum < renderOpenSet.length / PAGE_SIZE;
+  const totalPage = Math.ceil(renderOpenSet.length / PAGE_SIZE);
+  const isNextPageAvailable = state.controls.pageNum < totalPage;
 
   return (
     <Container>
@@ -219,7 +234,9 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               </Desc>
               <Desc>
                 <Title>Page</Title>
-                <Value>{state.controls.pageNum}</Value>
+                <Value>
+                  {state.controls.pageNum}/{totalPage}
+                </Value>
               </Desc>
               <Desc>
                 <Title>
@@ -259,7 +276,13 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                     disabled={!isPrevPageAvailable}
                     onClick={() =>
                       isPrevPageAvailable &&
-                      handleClick(state.controls.pageNum - 1, state.times)
+                      setState((old) => ({
+                        ...old,
+                        controls: {
+                          ...old.controls,
+                          pageNum: old.controls.pageNum - 1,
+                        },
+                      }))
                     }
                   >
                     prev
@@ -270,7 +293,13 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                     disabled={!isNextPageAvailable}
                     onClick={() =>
                       isNextPageAvailable &&
-                      handleClick(state.controls.pageNum + 1, state.times)
+                      setState((old) => ({
+                        ...old,
+                        controls: {
+                          ...old.controls,
+                          pageNum: old.controls.pageNum + 1,
+                        },
+                      }))
                     }
                   >
                     next
@@ -280,7 +309,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>Simulate</Title>
                 <Value>
-                  <button onClick={() => handleClick(1, state.times + 1)}>
+                  <button onClick={() => handleClick(state.times + 1)}>
                     run
                   </button>
                 </Value>
@@ -328,7 +357,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
           </div>
         </MainContent>
         <TabControl>
-          {renderOpenSet.map((node, index) => {
+          {pagedSet.map((node, index) => {
             const selectedSide =
               node.level % 2 === 0 ? levelZeroSide : levelOneSide;
 
