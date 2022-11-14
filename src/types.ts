@@ -23,3 +23,25 @@ export interface Move {
   from: Position;
   to: Position;
 }
+
+export interface Node {
+  board: Board;
+  // level 0: start board
+  // level 1: all possible options by starter
+  // caller shall feed at least from level one
+  level: number;
+  // high score flavor top side, low score flavor bottom side.
+  score: number;
+  // used for sorting which item to node to choose as next pointer
+  priority: number;
+  // record exists if any side won
+  winner: Side;
+  // whether node should be considered when chosing next pointer
+  isOpenForCalculation: boolean;
+  // whether termination condition is reached
+  isTerminated: boolean;
+  // connection nodes
+  parent?: Node;
+  // connection nodes
+  children: Array<Node>;
+}
