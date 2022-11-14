@@ -149,6 +149,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
       setState((oldState) => ({
         ...oldState,
+        maximumLevel: response.maximumLevel,
         pointer: response.pointer,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
