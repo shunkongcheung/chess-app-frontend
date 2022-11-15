@@ -12,9 +12,7 @@ const Index: NextPage = ({ board, side }: any) => {
 export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
   const { shortHash, side } = query;
 
-  console.log("hello", { shortHash, side });
   if (!shortHash || !side) {
-    console.log("hey how about here");
     return {
       redirect: {
         destination: `/?side=${side ?? Side.Bottom}&shortHash=${
