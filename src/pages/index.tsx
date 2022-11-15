@@ -1,15 +1,34 @@
+import type { GetServerSidePropsContext, NextPage } from "next";
 import { getInitialBoard, getHashFromBoard } from "../chess";
 import { Side } from "../types";
 
-export default function Index() {
-  return <></>;
-}
+import { getBoardFromHash } from "../chess";
+import Simulator from "../containers/Simulator";
 
-export async function getServerSideProps() {
+const Index: NextPage = ({ board, side }: any) => {
+  return <Simulator board={board} toBeMovedBy={side} />;
+};
+
+export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
+  const { shortHash, side } = query;
+
+  console.log("hello", { shortHash, side });
+  if (!shortHash || !side) {
+    console.log("hey how about here");
+    return {
+      redirect: {
+        destination: `/?side=${side ?? Side.Bottom}&shortHash=${
+          shortHash ?? getHashFromBoard(getInitialBoard())
+        }`,
+        permanent: true,
+      },
+    };
+  }
+
+  const board = getBoardFromHash(query.shortHash as string);
   return {
-    redirect: {
-      destination: `/${Side.Bottom}/${getHashFromBoard(getInitialBoard())}`,
-      permanent: true,
-    },
+    props: { board, side },
   };
-}
+};
+
+export default Index;
