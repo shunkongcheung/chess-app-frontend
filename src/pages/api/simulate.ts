@@ -27,7 +27,7 @@ export interface Result {
   runTimes: number;
   total: number;
   timeTaken: number;
-  pointer: string;
+  pointer?: NetworkNode;
   openSet: Array<NetworkNode>;
   nextNodes: Array<NetworkNode>;
   maximumLevel: number;
@@ -113,7 +113,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     isSorted,
     runTimes,
     total: result.openSet.length,
-    pointer: result.pointer ? getHashFromBoard(result.pointer.board) : "",
+    pointer: result.pointer ? getNetworkNodeFromDataNode(result.pointer) : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
     timeTaken: Math.round(endTime - startTime),

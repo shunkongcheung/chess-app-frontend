@@ -16,7 +16,8 @@ interface IProps {
   toBeMovedBy: Side;
 }
 
-interface State extends Omit<Result, "openSet" | "nextNodes"> {
+interface State extends Omit<Result, "pointer" | "openSet" | "nextNodes"> {
+  pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
 }
@@ -117,7 +118,6 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
 
   const [state, setState] = useState<State>({
     openSet: initialSet.current,
-    pointer: "",
     nextNodes: [],
     runTimes: 0,
     total: 1,
@@ -149,6 +149,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       setState((oldState) => ({
         ...oldState,
         ...response,
+        pointer: response.pointer ? response.pointer as unknown as Node : undefined, 
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
@@ -156,9 +157,6 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
     [levelZeroSide]
   );
 
-  const prevPointer = state.openSet.find(
-    (item) => getHashFromBoard(item.board) === state.pointer
-  );
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
 
   const isPrevPageAvailable = state.pageNum > 1;
@@ -301,40 +299,40 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
             </Card>
           </div>
           <div>
-            {prevPointer && (
+            {state.pointer && (
               <Card>
-                <div onClick={() => copyHash(prevPointer.board)}>
-                  <ChessBoard board={prevPointer.board} />
+                <div onClick={() => state.pointer && copyHash(state.pointer.board)}>
+                  <ChessBoard board={state.pointer.board} />
                 </div>
                 <Desc>
                   <Title>To be moved by</Title>
                   <Value>
-                    {prevPointer.level % 2 === 0 ? levelZeroSide : levelOneSide}
+                    {state.pointer.level % 2 === 0 ? levelZeroSide : levelOneSide}
                   </Value>
                 </Desc>
                 <Desc>
                   <Title>Score</Title>
-                  <Value>{prevPointer.score}</Value>
+                  <Value>{state.pointer.score}</Value>
                 </Desc>
                 <Desc>
                   <Title>Winner</Title>
-                  <Value>{prevPointer.winner}</Value>
+                  <Value>{state.pointer.winner}</Value>
                 </Desc>
                 <Desc>
                   <Title>Level</Title>
-                  <Value>{prevPointer.level}</Value>
+                  <Value>{state.pointer.level}</Value>
                 </Desc>
                 <Desc>
                   <Title>Priority</Title>
-                  <Value>{prevPointer.priority}</Value>
+                  <Value>{state.pointer.priority}</Value>
                 </Desc>
                 <Desc>
                   <Title>Is Open</Title>
-                  <Value>{`${prevPointer.isOpenForCalculation}`}</Value>
+                  <Value>{`${state.pointer.isOpenForCalculation}`}</Value>
                 </Desc>
                 <Desc>
                   <Title>Is Terminated</Title>
-                  <Value>{`${prevPointer.isTerminated}`}</Value>
+                  <Value>{`${state.pointer.isTerminated}`}</Value>
                 </Desc>
               </Card>
             )}
