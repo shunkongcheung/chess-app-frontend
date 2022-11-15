@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -16,7 +10,6 @@ import {
   Payload,
   Result,
 } from "../pages/api/simulate";
-import { nodeSorter } from "../simulator";
 
 interface IProps {
   board: Board;
@@ -26,12 +19,6 @@ interface IProps {
 interface State extends Omit<Result, "openSet" | "nextNodes"> {
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
-  times: number;
-  controls: {
-    pageNum: number;
-    isSorted: boolean;
-    isOpenOnly: boolean;
-  };
 }
 
 const Container = styled.div`
@@ -114,103 +101,69 @@ const fetchData = async (payload: Payload) => {
 };
 
 const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
-  const [state, setState] = useState<State>((): State => {
-    const openSet = [
-      {
-        index: 0,
-        board,
-        level: 0,
-        score: getBoardWinnerAndScore(board)[1],
-        winner: Side.None,
-        isTerminated: false,
-        priority: 0,
-        children: [],
-        isOpenForCalculation: true,
-      },
-    ];
-    return {
-      openSet,
-      pointer: "",
-      nextNodes: [],
-      times: 0,
-      timeTaken: 0,
-      maximumLevel: 0,
-      controls: {
-        pageNum: 1,
-        isSorted: false,
-        isOpenOnly: false,
-      },
-    };
+  const initialSet = useRef<Array<Node>>([
+    {
+      index: 0,
+      board,
+      level: 0,
+      score: getBoardWinnerAndScore(board)[1],
+      winner: Side.None,
+      isTerminated: false,
+      priority: 0,
+      children: [],
+      isOpenForCalculation: true,
+    },
+  ]);
+
+  const [state, setState] = useState<State>({
+    openSet: initialSet.current,
+    pointer: "",
+    nextNodes: [],
+    runTimes: 0,
+    total: 1,
+    timeTaken: 0,
+    maximumLevel: 0,
+    pageNum: 1,
+    pageSize: 1,
+    isOpenOnly: false,
+    isSorted: false,
   });
 
   const handleClick = useCallback(
-    async (runTimes: number) => {
-      const { openSet } = state;
-      const networkOpenSet = openSet.map(getNetworkNodeFromDataNode);
-
+    async (
+      pageNum: number,
+      isOpenOnly: boolean,
+      isSorted: boolean,
+      runTimes: number
+    ) => {
+      const networkOpenSet = initialSet.current.map(getNetworkNodeFromDataNode);
       const response = await fetchData({
+        pageNum,
+        isOpenOnly,
+        isSorted,
         openSet: networkOpenSet,
         levelZeroSide,
         runTimes,
       });
-
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
       setState((oldState) => ({
         ...oldState,
-        maximumLevel: response.maximumLevel,
-        pointer: response.pointer,
+        ...response,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
-        timeTaken: response.timeTaken,
-        times: oldState.times + runTimes,
       }));
     },
-    [state, levelZeroSide]
+    [levelZeroSide]
   );
-
-  // const isInitialized = useRef(false);
-  // useEffect(() => {
-  //   if (isInitialized.current) return;
-  //   isInitialized.current = true;
-  const TIMES = 5000;
-  //   handleClick(TIMES);
-  // }, [handleClick]);
 
   const prevPointer = state.openSet.find(
     (item) => getHashFromBoard(item.board) === state.pointer
   );
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
 
-  const renderOpenSet = useMemo<Array<Node>>(() => {
-    let newSet = [...state.openSet];
-
-    if (state.controls.isSorted) {
-      newSet.sort(nodeSorter);
-    } else {
-      newSet.sort((a, b) => {
-        if (a.index < b.index) return -1;
-        if (a.index > b.index) return 1;
-        return 0;
-      });
-    }
-
-    if (state.controls.isOpenOnly) {
-      newSet = newSet.filter(
-        (item) => item.isOpenForCalculation && !item.isTerminated
-      );
-    }
-
-    return newSet;
-  }, [state]);
-
-  const pagedSet = renderOpenSet.slice(
-    (state.controls.pageNum - 1) * PAGE_SIZE,
-    state.controls.pageNum * PAGE_SIZE
-  );
-
-  const isPrevPageAvailable = state.controls.pageNum > 1;
-  const totalPage = Math.ceil(renderOpenSet.length / PAGE_SIZE);
-  const isNextPageAvailable = state.controls.pageNum < totalPage;
+  const isPrevPageAvailable = state.pageNum > 1;
+  const totalPage = Math.ceil(state.total / PAGE_SIZE);
+  const isNextPageAvailable = state.pageNum < totalPage;
 
   return (
     <Container>
@@ -229,7 +182,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               </Desc>
               <Desc>
                 <Title>#</Title>
-                <Value>{state.times}</Value>
+                <Value>{state.runTimes}</Value>
               </Desc>
               <Desc>
                 <Title>Time</Title>
@@ -246,38 +199,42 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>Page</Title>
                 <Value>
-                  {state.controls.pageNum}/{totalPage}
+                  {state.pageNum}/{totalPage}
                 </Value>
               </Desc>
               <Desc>
                 <Title>
                   <button
                     onClick={() =>
-                      setState((old) => ({
-                        ...old,
-                        controls: {
-                          ...old.controls,
-                          isOpenOnly: !old.controls.isOpenOnly,
-                        },
-                      }))
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum,
+                          !old.isOpenOnly,
+                          old.isSorted,
+                          old.runTimes
+                        );
+                        return old;
+                      })
                     }
                   >
-                    Open: {`${state.controls.isOpenOnly}`}
+                    Open: {`${state.isOpenOnly}`}
                   </button>
                 </Title>
                 <Value>
                   <button
                     onClick={() =>
-                      setState((old) => ({
-                        ...old,
-                        controls: {
-                          ...old.controls,
-                          isSorted: !old.controls.isSorted,
-                        },
-                      }))
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum,
+                          old.isOpenOnly,
+                          !old.isSorted,
+                          old.runTimes
+                        );
+                        return old;
+                      })
                     }
                   >
-                    Sorted: {`${state.controls.isSorted}`}
+                    Sorted: {`${state.isSorted}`}
                   </button>
                 </Value>
               </Desc>
@@ -287,13 +244,15 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                     disabled={!isPrevPageAvailable}
                     onClick={() =>
                       isPrevPageAvailable &&
-                      setState((old) => ({
-                        ...old,
-                        controls: {
-                          ...old.controls,
-                          pageNum: old.controls.pageNum - 1,
-                        },
-                      }))
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum - 1,
+                          old.isOpenOnly,
+                          old.isSorted,
+                          old.runTimes
+                        );
+                        return old;
+                      })
                     }
                   >
                     prev
@@ -304,13 +263,15 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                     disabled={!isNextPageAvailable}
                     onClick={() =>
                       isNextPageAvailable &&
-                      setState((old) => ({
-                        ...old,
-                        controls: {
-                          ...old.controls,
-                          pageNum: old.controls.pageNum + 1,
-                        },
-                      }))
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum + 1,
+                          old.isOpenOnly,
+                          old.isSorted,
+                          old.runTimes
+                        );
+                        return old;
+                      })
                     }
                   >
                     next
@@ -320,7 +281,21 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>Simulate</Title>
                 <Value>
-                  <button onClick={() => handleClick(TIMES)}>run</button>
+                  <button
+                    onClick={() =>
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum,
+                          old.isOpenOnly,
+                          old.isSorted,
+                          old.runTimes + 1
+                        );
+                        return old;
+                      })
+                    }
+                  >
+                    run
+                  </button>
                 </Value>
               </Desc>
             </Card>
@@ -366,7 +341,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
           </div>
         </MainContent>
         <TabControl>
-          {pagedSet.map((node, index) => {
+          {state.openSet.map((node, index) => {
             const selectedSide =
               node.level % 2 === 0 ? levelZeroSide : levelOneSide;
 

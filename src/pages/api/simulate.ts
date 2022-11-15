@@ -9,6 +9,10 @@ interface NetworkNode extends Omit<Node, "parent" | "children"> {
 }
 
 export interface Payload {
+  pageNum?: number; // default 1
+  pageSize?: number; // default 50
+  isSorted?: boolean; // default false
+  isOpenOnly?: boolean; // default false
   runTimes?: number; // default 1
   levelZeroSide: Side;
   openSet: Array<NetworkNode>;
@@ -16,6 +20,12 @@ export interface Payload {
 }
 
 export interface Result {
+  pageNum: number;
+  pageSize: number;
+  isSorted: boolean;
+  isOpenOnly: boolean;
+  runTimes: number;
+  total: number;
   timeTaken: number;
   pointer: string;
   openSet: Array<NetworkNode>;
@@ -54,6 +64,10 @@ export const getOpenSetFromNetworkOpenSet = (
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const payload = JSON.parse(req.body) as Payload;
   const {
+    pageNum = 1,
+    pageSize = 50,
+    isSorted = false,
+    isOpenOnly = false,
     runTimes = 1,
     levelZeroSide,
     openSet: networkOpenSet,
@@ -77,9 +91,30 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   });
   const endTime = performance.now();
 
+  let resultSet = result.openSet.map(getNetworkNodeFromDataNode);
+  if (!isSorted) {
+    resultSet.sort((a, b) => {
+      if (a.index < b.index) return -1;
+      if (a.index > b.index) return 1;
+      return 0;
+    });
+  }
+
+  if (isOpenOnly) {
+    resultSet = resultSet.filter(
+      (item) => item.isOpenForCalculation && !item.isTerminated
+    );
+  }
+
   const response: Result = {
+    pageNum,
+    pageSize,
+    isOpenOnly,
+    isSorted,
+    runTimes,
+    total: result.openSet.length,
     pointer: result.pointer ? getHashFromBoard(result.pointer.board) : "",
-    openSet: result.openSet.map(getNetworkNodeFromDataNode),
+    openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
     timeTaken: Math.round(endTime - startTime),
     maximumLevel,
