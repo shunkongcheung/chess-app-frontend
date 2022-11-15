@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getHashFromBoard } from "../../chess";
 import { run } from "../../simulator";
 import { Side } from "../../types";
 import {
@@ -98,7 +99,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   };
 
   if (isExport)
-    storeOpenSet(levelZeroSide, levelZeroNode.board, result.openSet);
+    storeOpenSet(
+      levelZeroSide,
+      getHashFromBoard(levelZeroNode.board),
+      result.openSet
+    );
 
   console.log(
     `finished (${runTimes}}: ${performance.now() - startTime}ms - ${
