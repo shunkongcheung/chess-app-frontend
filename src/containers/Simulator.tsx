@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { useRouter } from 'next/router';
+import { useRouter } from "next/router";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -86,8 +86,9 @@ const TabItem = styled.div`
 `;
 
 const PAGE_SIZE = 50;
-const INCREMENT = 1;
 const EXPORT_RUN_TIMES = 2000;
+const INCREMENT = EXPORT_RUN_TIMES;
+// const INCREMENT = 1;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -288,9 +289,17 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                 <Title>
                   <button
                     onClick={async () => {
-                        await handleClick(1,false,false,EXPORT_RUN_TIMES,true);
-                        const { query } = router;
-                        router.push(`/check?side=${query.side}&shortHash=${query.shortHash}`);
+                      await handleClick(
+                        1,
+                        false,
+                        false,
+                        EXPORT_RUN_TIMES,
+                        true
+                      );
+                      const { query } = router;
+                      router.push(
+                        `/check?side=${query.side}&shortHash=${query.shortHash}`
+                      );
                     }}
                   >
                     export
@@ -371,6 +380,10 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                   <div onClick={() => copyHash(node.board)}>
                     <ChessBoard board={node.board} />
                   </div>
+                  <Desc>
+                    <Title>Index</Title>
+                    <Value>{node.index}</Value>
+                  </Desc>
                   <Desc>
                     <Title>To be moved by</Title>
                     <Value>{selectedSide}</Value>
