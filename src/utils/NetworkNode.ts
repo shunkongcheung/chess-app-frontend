@@ -1,15 +1,14 @@
 import { Node } from "../types";
-import { getHashFromBoard } from "../chess";
 
 export interface NetworkNode extends Omit<Node, "parent" | "children"> {
-  parent: string;
-  children: Array<string>;
+  parent?: number;
+  children: Array<number>;
 }
 
 export const getNetworkNodeFromDataNode = (node: Node): NetworkNode => ({
   ...node,
-  parent: node.parent ? getHashFromBoard(node.parent.board) : "",
-  children: node.children.map((item) => getHashFromBoard(item.board)),
+  parent: node.parent ? node.parent.index : undefined,
+  children: node.children.map((item) => item.index),
 });
 
 export const getOpenSetFromNetworkOpenSet = (
@@ -23,11 +22,9 @@ export const getOpenSetFromNetworkOpenSet = (
 
   openSet.map((node, index) => {
     const networkNode = networkOpenSet[index];
-    node.parent = openSet.find(
-      (item) => getHashFromBoard(item.board) === networkNode.parent
-    );
+    node.parent = openSet.find((item) => item.index === networkNode.parent);
     node.children = openSet.filter((node) =>
-      networkNode.children.includes(getHashFromBoard(node.board))
+      networkNode.children.includes(node.index)
     );
   });
 
