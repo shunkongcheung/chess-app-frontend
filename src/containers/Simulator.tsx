@@ -85,7 +85,8 @@ const TabItem = styled.div`
 `;
 
 const PAGE_SIZE = 50;
-const INCREMENT = 5000;
+const INCREMENT = 1;
+const EXPORT_RUN_TIMES = 5000;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -134,7 +135,8 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       pageNum: number,
       isOpenOnly: boolean,
       isSorted: boolean,
-      runTimes: number
+      runTimes: number,
+      isExport = false
     ) => {
       const networkOpenSet = initialSet.current.map(getNetworkNodeFromDataNode);
       const response = await fetchData({
@@ -144,6 +146,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
         openSet: networkOpenSet,
         levelZeroSide,
         runTimes,
+        isExport,
       });
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
       setState((oldState) => ({
@@ -190,7 +193,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               </Desc>
               <Desc>
                 <Title>Count</Title>
-                <Value>{state.openSet.length}</Value>
+                <Value>{state.total}</Value>
               </Desc>
               <Desc>
                 <Title>Maximum level</Title>
@@ -279,7 +282,25 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                 </Value>
               </Desc>
               <Desc>
-                <Title>Simulate</Title>
+                <Title>
+                  <button
+                    onClick={() =>
+                      setState((old) => {
+                        handleClick(
+                          old.pageNum,
+                          old.isOpenOnly,
+                          old.isSorted,
+                          // old.runTimes + INCREMENT,
+                          EXPORT_RUN_TIMES,
+                          true
+                        );
+                        return old;
+                      })
+                    }
+                  >
+                    export
+                  </button>
+                </Title>
                 <Value>
                   <button
                     onClick={() =>

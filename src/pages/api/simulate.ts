@@ -7,11 +7,14 @@ import {
   getNetworkNodeFromDataNode,
 } from "../../utils/NetworkNode";
 
+import { storeOpenSet } from "../../utils/Storage";
+
 export interface Payload {
   pageNum?: number; // default 1
   pageSize?: number; // default 50
   isSorted?: boolean; // default false
   isOpenOnly?: boolean; // default false
+  isExport?: boolean; // default false
   runTimes?: number; // default 1
   levelZeroSide: Side;
   openSet: Array<NetworkNode>;
@@ -39,6 +42,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     pageSize = 50,
     isSorted = false,
     isOpenOnly = false,
+    isExport = false,
     runTimes = 1,
     levelZeroSide,
     openSet: networkOpenSet,
@@ -92,6 +96,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     timeTaken: Math.round(endTime - startTime),
     maximumLevel,
   };
+
+  if (isExport)
+    storeOpenSet(levelZeroSide, levelZeroNode.board, result.openSet);
 
   console.log(
     `finished (${runTimes}}: ${performance.now() - startTime}ms - ${
