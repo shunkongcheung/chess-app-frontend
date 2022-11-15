@@ -98,17 +98,19 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     maximumLevel,
   };
 
-  if (isExport)
-    storeOpenSet(
-      levelZeroSide,
-      getHashFromBoard(levelZeroNode.board),
-      result.openSet
-    );
-
   console.log(
     `finished (${runTimes}}: ${performance.now() - startTime}ms - ${
       result.openSet.length
     }`
   );
   res.status(200).json(response);
+
+  if (isExport) {
+    storeOpenSet(
+      levelZeroSide,
+      getHashFromBoard(levelZeroNode.board),
+      result.openSet
+    );
+    console.log("finish storage");
+  }
 }
