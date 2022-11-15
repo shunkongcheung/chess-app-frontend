@@ -60,41 +60,21 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     maximumLevel = 5,
   } = payload;
 
-  if (runTimes < 1) {
-    const response: Result = {
-      timeTaken: 0,
-      pointer: "",
-      openSet: networkOpenSet,
-      nextNodes: [],
-      maximumLevel,
-    };
-    return res.status(200).json(response);
-  }
-
   const startTime = performance.now();
   const openSet = getOpenSetFromNetworkOpenSet(networkOpenSet);
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
+  const onHundredCallback = (idx: number, length: number) => {
+    console.log(`${idx}: ${performance.now() - startTime}ms - ${length}`);
+  };
   let result = run({
     levelZeroScore: levelZeroNode.score,
     levelZeroSide,
     openSet,
     maximumLevel,
+    runTimes,
+    onHundredCallback,
   });
-  for (let index = 1; index < runTimes; index++) {
-    result = run({
-      ...result,
-      levelZeroScore: levelZeroNode.score,
-      levelZeroSide,
-      maximumLevel,
-    });
-    if (index % 100 === 0)
-      console.log(
-        `${index}: ${performance.now() - startTime}ms - ${
-          result.openSet.length
-        }`
-      );
-  }
   const endTime = performance.now();
 
   const response: Result = {

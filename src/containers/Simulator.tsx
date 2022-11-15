@@ -172,7 +172,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
   // useEffect(() => {
   //   if (isInitialized.current) return;
   //   isInitialized.current = true;
-  //   const TIMES = 2000;
+  const TIMES = 5000;
   //   handleClick(TIMES);
   // }, [handleClick]);
 
@@ -186,6 +186,12 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
 
     if (state.controls.isSorted) {
       newSet.sort(nodeSorter);
+    } else {
+      newSet.sort((a, b) => {
+        if (a.index < b.index) return -1;
+        if (a.index > b.index) return 1;
+        return 0;
+      });
     }
 
     if (state.controls.isOpenOnly) {
@@ -314,7 +320,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>Simulate</Title>
                 <Value>
-                  <button onClick={() => handleClick(1000)}>run</button>
+                  <button onClick={() => handleClick(TIMES)}>run</button>
                 </Value>
               </Desc>
             </Card>

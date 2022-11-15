@@ -9,12 +9,15 @@ import {
 import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
+import DataStore, { LinkedListNode } from "./DataStore";
 
 interface Args {
   levelZeroScore: number;
   levelZeroSide: Side;
   openSet: Array<Node>;
   maximumLevel: number;
+  runTimes: number;
+  onHundredCallback?: (runIdx: number, count: number) => any;
 }
 
 interface Ret {
@@ -23,22 +26,48 @@ interface Ret {
   nextNodes: Array<Node>; // debug only
 }
 
-const getPointer = (openSet: Array<Node>): Node | undefined => {
-  openSet.sort(nodeSorter);
-  return openSet.find(
-    (node) => !node.isTerminated && node.isOpenForCalculation
-  );
+interface InternalArgs extends Omit<Args, "openSet" | "runTimes"> {
+  openSetStore: DataStore<Node>;
+}
+
+interface InternalRet extends Omit<Ret, "openSet"> {
+  openSetStore: DataStore<Node>;
+}
+
+const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
+  const getKeyFromNode = (node: Node) => getHashFromBoard(node.board);
+  const openSetStore = new DataStore<Node>(getKeyFromNode, nodeSorter, openSet);
+
+  let ret = runHelper({ ...args, openSetStore });
+  for (let idx = 1; idx < runTimes; idx++) {
+    ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+    if (onHundredCallback && idx % 100 === 0)
+      onHundredCallback(idx, ret.openSetStore.length);
+  }
+
+  const { openSetStore: retOpenSetStore, ...rest } = ret;
+
+  return { ...rest, openSet: retOpenSetStore.asArray() };
 };
 
-const run = ({
+const getPointer = (head: LinkedListNode<Node>): Node | undefined => {
+  while (true) {
+    if (!head.node.isTerminated && head.node.isOpenForCalculation)
+      return head.node;
+    if (head.next) head = head.next;
+    else return undefined;
+  }
+};
+
+const runHelper = ({
   levelZeroScore,
   levelZeroSide,
-  openSet,
+  openSetStore,
   maximumLevel,
-}: Args): Ret => {
-  const pointer = getPointer(openSet);
+}: InternalArgs): InternalRet => {
+  const pointer = getPointer(openSetStore.head);
   if (!pointer) {
-    return { openSet, nextNodes: [] };
+    return { openSetStore, nextNodes: [] };
   }
 
   pointer.isOpenForCalculation = false;
@@ -55,11 +84,8 @@ const run = ({
     );
 
     const level = pointer.level + 1;
-    const existingBoardHashs = openSet.map((node) =>
-      getHashFromBoard(node.board)
-    );
     const isNextNodeAtMaxLevel = level >= maximumLevel;
-    const setLength = openSet.length;
+    const setLength = openSetStore.length;
 
     nextNodes = nextBoards
       .map((board, index) => {
@@ -83,16 +109,11 @@ const run = ({
         };
         return node;
       })
-      .filter(
-        (node) =>
-          !existingBoardHashs.find(
-            (boardHash) => boardHash === getHashFromBoard(node.board)
-          )
-      );
+      .filter((node) => !openSetStore.getIsNodeExists(node));
 
     // update parent's children
     pointer.children = nextNodes;
-    openSet = openSet.concat(nextNodes);
+    nextNodes.map((node) => openSetStore.insert(node));
 
     if (!nextNodes.length) {
       pointer.isTerminated = true;
@@ -109,13 +130,15 @@ const run = ({
     ) {
       pointer.parent.isOpenForCalculation = true;
       pointer.parent.priority = Math.max(pointer.parent.priority, -newPriority);
+      openSetStore.update(pointer.parent);
     }
 
     pointer.priority = newPriority;
     pointer.isTerminated = getIsNodeTerminated(pointer, maximumLevel);
+    openSetStore.update(pointer);
   }
 
-  return { openSet, pointer, nextNodes };
+  return { openSetStore, pointer, nextNodes };
 };
 
 export default run;
