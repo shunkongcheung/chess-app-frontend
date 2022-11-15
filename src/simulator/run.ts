@@ -35,6 +35,10 @@ interface InternalRet extends Omit<Ret, "openSet"> {
 }
 
 const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
+  if (runTimes <= 0) {
+    return { openSet, nextNodes: [] };
+  }
+
   const getKeyFromNode = (node: Node) => getHashFromBoard(node.board);
   const openSetStore = new DataStore<Node>(getKeyFromNode, nodeSorter, openSet);
 
