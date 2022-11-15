@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
+import { useRouter } from 'next/router';
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -86,7 +87,7 @@ const TabItem = styled.div`
 
 const PAGE_SIZE = 50;
 const INCREMENT = 1;
-const EXPORT_RUN_TIMES = 5000;
+const EXPORT_RUN_TIMES = 2000;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -129,6 +130,8 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
     isOpenOnly: false,
     isSorted: false,
   });
+
+  const router = useRouter();
 
   const handleClick = useCallback(
     async (
@@ -284,19 +287,11 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
               <Desc>
                 <Title>
                   <button
-                    onClick={() =>
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum,
-                          old.isOpenOnly,
-                          old.isSorted,
-                          // old.runTimes + INCREMENT,
-                          EXPORT_RUN_TIMES,
-                          true
-                        );
-                        return old;
-                      })
-                    }
+                    onClick={async () => {
+                        await handleClick(1,false,false,EXPORT_RUN_TIMES,true);
+                        const { query } = router;
+                        router.push(`/check?side=${query.side}&shortHash=${query.shortHash}`);
+                    }}
                   >
                     export
                   </button>
