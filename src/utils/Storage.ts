@@ -1,44 +1,95 @@
-import { promises } from "fs";
+import { DataTypes, Sequelize, Model } from "sequelize";
 import path from "path";
 import getConfig from "next/config";
 
-import { getHashFromBoard } from "../chess";
-import { Board, Node, Side } from "../types";
-import { getNetworkNodeFromDataNode } from "./NetworkNode";
+import { Node, Side } from "../types";
+import { NetworkNode, getNetworkNodeFromDataNode } from "./NetworkNode";
 
-const STORAGE_ROOT = path.join(
-  getConfig().serverRuntimeConfig.PROJECT_ROOT,
-  "static"
-);
+class NetworkNodeTable extends Model {
+  declare traceId: string;
+  declare content: string;
+}
 
-const getIsFileExist = async (path: string) => {
-  try {
-    await promises.access(path);
-    return true;
-  } catch {
-    return false;
-  }
+const getTraceId = (levelZeroSide: Side, boardHash: string, index: number) => {
+  return `${levelZeroSide}-${boardHash}-${index}`;
 };
 
-const getFilename = (levelZeroSide: Side, levelZeroBoard: Board) => {
-  const boardHash = getHashFromBoard(levelZeroBoard);
-  return `${levelZeroSide}-${boardHash}.json`;
+const getSequelize = async () => {
+  const { PROJECT_ROOT } = getConfig().serverRuntimeConfig;
+  const storage = path.join(PROJECT_ROOT, "static", "database.sqlite");
+  const sequelize = new Sequelize({
+    dialect: "sqlite",
+    storage,
+    logging: false,
+  });
+
+  await sequelize.authenticate();
+  await sequelize.sync();
+
+  NetworkNodeTable.init(
+    {
+      traceId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        primaryKey: true,
+      },
+      content: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+    },
+    { sequelize }
+  );
+  await NetworkNodeTable.sync();
+
+  return { sequelize };
 };
 
 export const storeOpenSet = async (
   levelZeroSide: Side,
-  levelZeroBoard: Board,
+  boardHash: string,
   nodes: Array<Node>
 ) => {
-  const filename = getFilename(levelZeroSide, levelZeroBoard);
-  const content = JSON.stringify(
-    nodes.map((node) => getNetworkNodeFromDataNode(node))
-  );
-  const fullpath = path.join(STORAGE_ROOT, filename);
+  await getSequelize();
+  const networkNodes = nodes.map((node) => getNetworkNodeFromDataNode(node));
 
-  await promises.mkdir(STORAGE_ROOT, { recursive: true });
-  if (await getIsFileExist(fullpath)) {
-    await promises.rm(fullpath);
+  const tableEntries = networkNodes.map((networkNode) => ({
+    traceId: getTraceId(levelZeroSide, boardHash, networkNode.index),
+    content: JSON.stringify(networkNode),
+  }));
+
+  await NetworkNodeTable.bulkCreate(tableEntries, { ignoreDuplicates: true });
+};
+
+export const getFileOpenSet = async (
+  levelZeroSide: Side,
+  boardHash: string,
+  index: number
+) => {
+  await getSequelize();
+  const traceId = getTraceId(levelZeroSide, boardHash, index);
+
+  const primaryNetworkNode = await NetworkNodeTable.findByPk(traceId);
+  if (!primaryNetworkNode) throw Error();
+
+  const target = JSON.parse(primaryNetworkNode.content) as NetworkNode;
+
+  if (target.parent) {
+    const parentTraceId = getTraceId(levelZeroSide, boardHash, target.parent);
+    const parentNetworkNode = await NetworkNodeTable.findByPk(parentTraceId);
+    if (parentNetworkNode)
+      target.parent = JSON.parse(parentNetworkNode.content);
   }
-  await promises.writeFile(fullpath, content);
+
+  target.children = await Promise.all(
+    target.children.map(async (childIndex) => {
+      const childTraceId = getTraceId(levelZeroSide, boardHash, childIndex);
+      const childNetworkNode = await NetworkNodeTable.findByPk(childTraceId);
+      return childNetworkNode
+        ? JSON.parse(childNetworkNode.content)
+        : childIndex;
+    })
+  );
+
+  return target;
 };
