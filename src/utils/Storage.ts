@@ -11,7 +11,7 @@ class NetworkNodeTable extends Model {
 }
 
 const getTraceId = (levelZeroSide: Side, boardHash: string, index: number) => {
-  return `${levelZeroSide}-${boardHash}-${index}`;
+  return `${levelZeroSide}-${boardHash}-${index}-`;
 };
 
 const getSequelize = async () => {
@@ -42,7 +42,7 @@ const getSequelize = async () => {
   );
   await NetworkNodeTable.sync();
 
-  return { sequelize };
+  return sequelize;
 };
 
 export const storeOpenSet = async (
@@ -50,7 +50,7 @@ export const storeOpenSet = async (
   boardHash: string,
   nodes: Array<Node>
 ) => {
-  await getSequelize();
+  const sequelize = await getSequelize();
   const networkNodes = nodes.map((node) => getNetworkNodeFromDataNode(node));
 
   const tableEntries = networkNodes.map((networkNode) => ({
@@ -59,6 +59,7 @@ export const storeOpenSet = async (
   }));
 
   await NetworkNodeTable.bulkCreate(tableEntries, { ignoreDuplicates: true });
+  await sequelize.close();
 };
 
 export const getFileOpenSet = async (
@@ -66,15 +67,18 @@ export const getFileOpenSet = async (
   boardHash: string,
   index: number
 ) => {
-  await getSequelize();
+  const sequelize = await getSequelize();
   const traceId = getTraceId(levelZeroSide, boardHash, index);
 
   const primaryNetworkNode = await NetworkNodeTable.findByPk(traceId);
-  if (!primaryNetworkNode) throw Error();
+  if (!primaryNetworkNode) {
+    await sequelize.close();
+    throw Error();
+  }
 
   const target = JSON.parse(primaryNetworkNode.content) as NetworkNode;
 
-  if (target.parent) {
+  if (target.parent !== undefined) {
     const parentTraceId = getTraceId(levelZeroSide, boardHash, target.parent);
     const parentNetworkNode = await NetworkNodeTable.findByPk(parentTraceId);
     if (parentNetworkNode)
@@ -91,5 +95,6 @@ export const getFileOpenSet = async (
     })
   );
 
+  await sequelize.close();
   return target;
 };
