@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getHashFromBoard } from "../../chess";
 import { run } from "../../simulator";
-import { Side, Node } from "../../types";
-
-interface NetworkNode extends Omit<Node, "parent" | "children"> {
-  parent: string;
-  children: Array<string>;
-}
+import { Side } from "../../types";
+import {
+  NetworkNode,
+  getOpenSetFromNetworkOpenSet,
+  getNetworkNodeFromDataNode,
+} from "../../utils/NetworkNode";
 
 export interface Payload {
   pageNum?: number; // default 1
@@ -32,34 +31,6 @@ export interface Result {
   nextNodes: Array<NetworkNode>;
   maximumLevel: number;
 }
-
-export const getNetworkNodeFromDataNode = (node: Node): NetworkNode => ({
-  ...node,
-  parent: node.parent ? getHashFromBoard(node.parent.board) : "",
-  children: node.children.map((item) => getHashFromBoard(item.board)),
-});
-
-export const getOpenSetFromNetworkOpenSet = (
-  networkOpenSet: Array<NetworkNode>
-): Array<Node> => {
-  const openSet: Array<Node> = networkOpenSet.map((node) => ({
-    ...node,
-    parent: undefined,
-    children: [],
-  }));
-
-  openSet.map((node, index) => {
-    const networkNode = networkOpenSet[index];
-    node.parent = openSet.find(
-      (item) => getHashFromBoard(item.board) === networkNode.parent
-    );
-    node.children = openSet.filter((node) =>
-      networkNode.children.includes(getHashFromBoard(node.board))
-    );
-  });
-
-  return openSet;
-};
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const payload = JSON.parse(req.body) as Payload;
@@ -113,7 +84,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     isSorted,
     runTimes,
     total: result.openSet.length,
-    pointer: result.pointer ? getNetworkNodeFromDataNode(result.pointer) : undefined,
+    pointer: result.pointer
+      ? getNetworkNodeFromDataNode(result.pointer)
+      : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
     timeTaken: Math.round(endTime - startTime),

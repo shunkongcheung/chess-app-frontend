@@ -4,12 +4,11 @@ import styled from "styled-components";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
 import { Board, Side, Node } from "../types";
 import ChessBoard from "../components/ChessBoard";
+import { Payload, Result } from "../pages/api/simulate";
 import {
   getNetworkNodeFromDataNode,
   getOpenSetFromNetworkOpenSet,
-  Payload,
-  Result,
-} from "../pages/api/simulate";
+} from "../utils/NetworkNode";
 
 interface IProps {
   board: Board;
@@ -86,6 +85,7 @@ const TabItem = styled.div`
 `;
 
 const PAGE_SIZE = 50;
+const INCREMENT = 5000;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -149,7 +149,9 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       setState((oldState) => ({
         ...oldState,
         ...response,
-        pointer: response.pointer ? response.pointer as unknown as Node : undefined, 
+        pointer: response.pointer
+          ? (response.pointer as unknown as Node)
+          : undefined,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
@@ -286,7 +288,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                           old.pageNum,
                           old.isOpenOnly,
                           old.isSorted,
-                          old.runTimes + 1
+                          old.runTimes + INCREMENT
                         );
                         return old;
                       })
@@ -301,13 +303,17 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
           <div>
             {state.pointer && (
               <Card>
-                <div onClick={() => state.pointer && copyHash(state.pointer.board)}>
+                <div
+                  onClick={() => state.pointer && copyHash(state.pointer.board)}
+                >
                   <ChessBoard board={state.pointer.board} />
                 </div>
                 <Desc>
                   <Title>To be moved by</Title>
                   <Value>
-                    {state.pointer.level % 2 === 0 ? levelZeroSide : levelOneSide}
+                    {state.pointer.level % 2 === 0
+                      ? levelZeroSide
+                      : levelOneSide}
                   </Value>
                 </Desc>
                 <Desc>
