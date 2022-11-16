@@ -30,7 +30,7 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
 
   let destination = `/simulate?`;
   destination += `side=${fSide}&`;
-  destination += `hortHash=${fShortHash}&`;
+  destination += `shortHash=${fShortHash}&`;
   destination += `increment=${fIncrement}&`;
   destination += `exportTimes=${fExportTimes}&`;
 
