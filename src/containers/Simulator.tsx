@@ -17,7 +17,8 @@ interface IProps {
   toBeMovedBy: Side;
 }
 
-interface State extends Omit<Result, "pointer" | "openSet" | "nextNodes" | "levelOneNodes"> {
+interface State
+  extends Omit<Result, "pointer" | "openSet" | "nextNodes" | "levelOneNodes"> {
   pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
@@ -135,7 +136,6 @@ const Simulator = ({
     isOpenOnly: false,
     isSorted: false,
   });
-
 
   const handleClick = useCallback(
     async (
@@ -291,7 +291,9 @@ const Simulator = ({
               <Desc>
                 <Title>
                   <button
-                    onClick={async () => await handleClick(1, false, false, exportTimes, true)}
+                    onClick={async () =>
+                      await handleClick(1, false, false, exportTimes, true)
+                    }
                   >
                     export
                   </button>

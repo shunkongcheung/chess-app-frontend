@@ -1,9 +1,13 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
-import { getInitialBoard, getHashFromBoard } from "../chess";
 import { Side } from "../types";
 
 import { getBoardFromHash } from "../chess";
 import Simulator from "../containers/Simulator";
+import {
+  DEFAULT_INCREMENT,
+  INITIAL_HASH,
+  DEFAULT_RUN_TIMES,
+} from "../constants";
 
 const Simulate: NextPage = ({ board, side, exportTimes, increment }: any) => {
   return (
@@ -19,26 +23,25 @@ const Simulate: NextPage = ({ board, side, exportTimes, increment }: any) => {
 export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
   const { shortHash, side, increment, exportTimes } = query;
 
-  const fShortHash = shortHash ?? getHashFromBoard(getInitialBoard());
-  const destination = `/simulate?side=${
-    side ?? Side.Bottom
-  }&shortHash=${fShortHash}`;
+  const fShortHash = shortHash ?? INITIAL_HASH;
+  const fSide = side ?? Side.Bottom;
+  const fIncrement = increment ?? DEFAULT_INCREMENT;
+  const fExportTimes = exportTimes ?? DEFAULT_RUN_TIMES;
 
-  if (!shortHash || !side) {
+  let destination = `/simulate?`;
+  destination += `side=${fSide}}&`;
+  destination += `hortHash=${fShortHash}&`;
+  destination += `increment=${fIncrement}&`;
+  destination += `exportTimes=${fExportTimes}&`;
+
+  if (!shortHash || !side || !increment || !exportTimes) {
     return {
       redirect: { destination },
     };
   }
 
-  const board = getBoardFromHash(query.shortHash as string);
-  return {
-    props: {
-      board,
-      side,
-      increment: increment ?? 1,
-      exportTimes: exportTimes ?? 5000,
-    },
-  };
+  const board = getBoardFromHash(fShortHash as string);
+  return { props: { board, side, increment, exportTimes } };
 };
 
 export default Simulate;

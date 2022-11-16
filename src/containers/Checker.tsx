@@ -170,7 +170,7 @@ const Checker = ({ node }: IProps) => {
         {(state.isSorted
           ? [...node.children].sort(nodeSorter)
           : node.children
-        ).map((node, index) => {
+        ).map((node) => {
           const selectedSide =
             node.level % 2 === 0 ? levelZeroSide : levelOneSide;
 

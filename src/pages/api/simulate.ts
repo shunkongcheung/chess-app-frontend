@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getHashFromBoard } from "../../chess";
+import { DEFAULT_MAXIMUM_LEVEL, DEFAULT_RUN_TIMES } from "../../constants";
 import { nodeSorter, run } from "../../simulator";
 import { Side } from "../../types";
 import {
@@ -11,15 +12,15 @@ import {
 import { storeOpenSet } from "../../utils/Storage";
 
 export interface Payload {
-  pageNum?: number; // default 1
-  pageSize?: number; // default 50
-  isSorted?: boolean; // default false
-  isOpenOnly?: boolean; // default false
-  isExport?: boolean; // default false
-  runTimes?: number; // default 1
+  pageNum?: number;
+  pageSize?: number;
+  isSorted?: boolean;
+  isOpenOnly?: boolean;
+  isExport?: boolean;
+  runTimes?: number;
   levelZeroSide: Side;
   openSet: Array<NetworkNode>;
-  maximumLevel?: number; // default 5
+  maximumLevel?: number;
 }
 
 export interface Result {
@@ -45,10 +46,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     isSorted = false,
     isOpenOnly = false,
     isExport = false,
-    runTimes = 1,
+    runTimes = DEFAULT_RUN_TIMES,
     levelZeroSide,
     openSet: networkOpenSet,
-    maximumLevel = 5,
+    maximumLevel = DEFAULT_MAXIMUM_LEVEL,
   } = payload;
 
   const startTime = performance.now();
