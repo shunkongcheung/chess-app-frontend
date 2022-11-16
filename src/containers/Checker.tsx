@@ -45,7 +45,11 @@ const Checker = ({
 
   const filteredChildren = state.isSorted
     ? [...currentNode.children].sort(nodeSorter)
-    : currentNode.children;
+    : [...currentNode.children].sort((a, b) => {
+        if (a.index < b.index) return -1;
+        if (a.index > b.index) return 1;
+        return 0;
+      });
 
   return (
     <Container>
