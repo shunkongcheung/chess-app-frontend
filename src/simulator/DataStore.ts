@@ -1,3 +1,5 @@
+import { getHashFromBoard } from "../chess";
+
 export interface LinkedListNode<T> {
   node: T;
   prev?: LinkedListNode<T>;
@@ -67,7 +69,7 @@ class DataStore<T> {
 
   public insert(node: T): T {
     if (this.getIsNodeExists(node)) {
-      throw Error();
+      throw Error("insert: node already exists");
     }
 
     const linkedListNode: LinkedListNode<T> = { node };
@@ -94,7 +96,7 @@ class DataStore<T> {
       linkedListNode.prev = pointer.prev;
       linkedListNode.next = pointer;
 
-      if (!pointer.prev) throw Error();
+      if (!pointer.prev) throw Error("insert: prev is undefined");
       pointer.prev.next = linkedListNode;
       pointer.prev = linkedListNode;
     }
@@ -105,14 +107,21 @@ class DataStore<T> {
   public update(node: T): T {
     const key = this._getKeyFromNode(node);
     const linkedListNode = this._hashMap[key];
-    if (!linkedListNode) throw Error();
+    if (!linkedListNode) throw Error("update: linked list node not exist");
 
-    let compare = this._sorter(node, linkedListNode.node);
-    if (compare === 0) {
+    // let compare = this._sorter(node, linkedListNode.node);
+    // if (compare === 0) {
+    //   return linkedListNode.node;
+    // }
+
+    if (linkedListNode.prev) linkedListNode.prev.next = linkedListNode.next;
+    else if (linkedListNode.next) {
+      this._head = linkedListNode.next;
+    } else {
+      // this is the only node in the list
       return linkedListNode.node;
     }
 
-    if (linkedListNode.prev) linkedListNode.prev.next = linkedListNode.next;
     if (linkedListNode.next) linkedListNode.next.prev = linkedListNode.prev;
 
     this._count -= 1;
