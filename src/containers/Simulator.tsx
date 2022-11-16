@@ -87,8 +87,8 @@ const TabItem = styled.div`
 
 const PAGE_SIZE = 50;
 const EXPORT_RUN_TIMES = 2000;
-const INCREMENT = EXPORT_RUN_TIMES;
-// const INCREMENT = 1;
+// const INCREMENT = EXPORT_RUN_TIMES;
+const INCREMENT = 1;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -114,6 +114,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
       winner: Side.None,
       isTerminated: false,
       priority: 0,
+      relatives: [],
       children: [],
       isOpenForCalculation: true,
     },
@@ -180,7 +181,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
             <Card>
               <ChessBoard board={board} />
               <Desc>
-                <Title>To be moved by</Title>
+                <Title>Level Side</Title>
                 <Value>{levelZeroSide}</Value>
               </Desc>
               <Desc>
@@ -334,7 +335,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                   <ChessBoard board={state.pointer.board} />
                 </div>
                 <Desc>
-                  <Title>To be moved by</Title>
+                  <Title>Level Side</Title>
                   <Value>
                     {state.pointer.level % 2 === 0
                       ? levelZeroSide
@@ -385,7 +386,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                     <Value>{node.index}</Value>
                   </Desc>
                   <Desc>
-                    <Title>To be moved by</Title>
+                    <Title>Level Side</Title>
                     <Value>{selectedSide}</Value>
                   </Desc>
                   <Desc>
