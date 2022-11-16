@@ -4,6 +4,7 @@ import { DEFAULT_RUN_TIMES } from "../../constants";
 import { nodeSorter, run } from "../../simulator";
 import DataStore from "../../simulator/DataStore";
 import { Side, Board, Node } from "../../types";
+import { getLogger } from "../../utils/Logger";
 import {
   NetworkNode,
   getNetworkNodeFromDataNode,
@@ -34,6 +35,8 @@ export interface Result extends Params {
   levelOneNodes: Array<NetworkNode>;
   nextNodes: Array<NetworkNode>;
 }
+
+const logger = getLogger("/api/simulate");
 
 export default async function handler(
   req: NextApiRequest,
@@ -75,16 +78,12 @@ export default async function handler(
       boardHash,
       remainRunTimes
     );
-    console.log(
-      `/api/simulate: data exists ${existingData.runTimes} -- ${remainRunTimes}`
-    );
+    logger(`Exists. ${existingData.runTimes}/${remainRunTimes}`);
 
     if (existingData.runTimes <= remainRunTimes) {
       remainRunTimes -= existingData.runTimes;
       openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-      console.log(
-        `/api/simulate: starter ${existingData.runTimes} -- ${remainRunTimes}`
-      );
+      logger(`Starter generated.`);
     }
   } catch {}
 
@@ -95,11 +94,8 @@ export default async function handler(
       const openSet = store.asArray();
       await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);
     }
-    console.log(
-      `/api/simulate: ${idx} -- ${performance.now() - startTime}ms -- ${
-        store.length
-      }`
-    );
+    const currentTime = performance.now() - startTime;
+    logger(`${idx}/${remainRunTimes}. ${currentTime}ms/${store.length}`);
   };
 
   const startTime = performance.now();
@@ -147,14 +143,12 @@ export default async function handler(
   };
 
   const totalTime = performance.now() - startTime;
-  console.log(
-    `/api/simulate: finished (${runTimes}}: ${totalTime}ms - ${result.openSet.length}`
-  );
+  logger(`finished. ${totalTime}ms/${result.openSet.length}/${remainRunTimes}`);
 
   res.status(200).json(response);
 
   if (isExport) {
     await storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
-    console.log("/api/simulate: finish storage");
+    logger("finish storage");
   }
 }
