@@ -116,12 +116,19 @@ const runHelper = ({
             levelZeroSide,
             levelZeroScore,
           }),
+          relatives: [],
           children: [],
           isOpenForCalculation: true,
         };
         return node;
       })
-      .filter((node) => !openSetStore.getIsNodeExists(node))
+      .filter((node) => {
+        const existingNode = openSetStore.getNode(node);
+        if (existingNode) {
+          existingNode.relatives.push(pointer);
+        }
+        return !existingNode;
+      })
       .map((node, index) => {
         // update index after filtering
         node.index = setLength + index;
@@ -147,7 +154,12 @@ const runHelper = ({
       pointer.parent.isOpenForCalculation = true;
       pointer.parent.priority = PSEUDO_HIGH_PRIORITY;
       openSetStore.update(pointer.parent);
-      // pointer.parent.priority = Math.max(pointer.parent.priority, -newPriority);
+
+      pointer.relatives.map((relative) => {
+        relative.isOpenForCalculation = true;
+        relative.priority = PSEUDO_HIGH_PRIORITY;
+        openSetStore.update(relative);
+      });
     }
 
     pointer.priority = newPriority;
