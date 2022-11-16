@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getHashFromBoard } from "../../chess";
-import { run } from "../../simulator";
+import { nodeSorter, run } from "../../simulator";
 import { Side } from "../../types";
 import {
   NetworkNode,
@@ -32,6 +32,7 @@ export interface Result {
   timeTaken: number;
   pointer?: NetworkNode;
   openSet: Array<NetworkNode>;
+  levelOneNodes: Array<NetworkNode>;
   nextNodes: Array<NetworkNode>;
   maximumLevel: number;
 }
@@ -94,6 +95,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
+    levelOneNodes: resultSet
+      .filter((node) => node.level === 1)
+      .sort(nodeSorter),
     timeTaken: Math.round(endTime - startTime),
     maximumLevel,
   };
