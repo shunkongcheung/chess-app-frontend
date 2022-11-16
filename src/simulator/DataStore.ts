@@ -62,13 +62,13 @@ class DataStore<T> {
     }
   }
 
-  public getIsNodeExists(node: T): boolean {
+  public getNode(node: T): T | undefined {
     const key = this._getKeyFromNode(node);
-    return key in this._hashMap;
+    return this._hashMap[key]?.node;
   }
 
   public insert(node: T): T {
-    if (this.getIsNodeExists(node)) {
+    if (!!this.getNode(node)) {
       throw Error("insert: node already exists");
     }
 
