@@ -34,6 +34,8 @@ interface InternalRet extends Omit<Ret, "openSet"> {
   openSetStore: DataStore<Node>;
 }
 
+const PSEUDO_HIGH_PRIORITY = 2497866;
+
 const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
   if (runTimes <= 0) {
     return { openSet, nextNodes: [] };
@@ -45,12 +47,18 @@ const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
   let ret = runHelper({ ...args, openSetStore });
   for (let idx = 1; idx < runTimes; idx++) {
     ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+
     if (onHundredCallback && idx % 100 === 0)
       onHundredCallback(idx, ret.openSetStore.length);
   }
 
-  const { openSetStore: retOpenSetStore, ...rest } = ret;
+  // before returning, ensure no level 1 node is at PSEUDO_HIGH_PRIORITY
+  // const finalPointer = getPointer(openSetStore.head);
+  // if(finalPointer && finalPointer.level === 1 && finalPointer.priority === PSEUDO_HIGH_PRIORITY) {
+  //   ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+  // }
 
+  const { openSetStore: retOpenSetStore, ...rest } = ret;
   return { ...rest, openSet: retOpenSetStore.asArray() };
 };
 
@@ -92,7 +100,7 @@ const runHelper = ({
     const setLength = openSetStore.length;
 
     nextNodes = nextBoards
-      .map((board, index) => {
+      .map((board) => {
         const [winner, score] = getBoardWinnerAndScore(board);
         const node: Node = {
           board,
@@ -100,7 +108,7 @@ const runHelper = ({
           score,
           winner,
           isTerminated: isNextNodeAtMaxLevel || winner !== Side.None,
-          index: setLength + index,
+          index: -1,
           parent: pointer,
           priority: getPriorityScore({
             level,
@@ -113,7 +121,12 @@ const runHelper = ({
         };
         return node;
       })
-      .filter((node) => !openSetStore.getIsNodeExists(node));
+      .filter((node) => !openSetStore.getIsNodeExists(node))
+      .map((node, index) => {
+        // update index after filtering
+        node.index = setLength + index;
+        return node;
+      });
 
     // update parent's children
     pointer.children = nextNodes;
@@ -128,13 +141,13 @@ const runHelper = ({
     const childrenPriorities = pointer.children.map((node) => node.priority);
     const newPriority = -Math.max(...childrenPriorities);
 
-    if (
-      (pointer.priority !== newPriority || pointer.winner !== Side.None) &&
-      !!pointer.parent
-    ) {
+    if (pointer.priority !== newPriority && !!pointer.parent) {
+      // if my score has changed, parent needs to re-eveluate, force it to the
+      // front such that it would be picked up on next iteration.
       pointer.parent.isOpenForCalculation = true;
-      pointer.parent.priority = Math.max(pointer.parent.priority, -newPriority);
+      pointer.parent.priority = PSEUDO_HIGH_PRIORITY;
       openSetStore.update(pointer.parent);
+      // pointer.parent.priority = Math.max(pointer.parent.priority, -newPriority);
     }
 
     pointer.priority = newPriority;
