@@ -5,14 +5,19 @@ import getConfig from "next/config";
 import { Node, Side } from "../types";
 import { NetworkNode, getNetworkNodeFromDataNode } from "./NetworkNode";
 
-class NetworkNodeTable extends Model {
-  declare traceId: string;
-  declare content: string;
+class ExportRecordTable extends Model {
+  declare id: number;
+  declare side: string;
+  declare boardHash: string;
+  declare maximumLevel: number;
+  declare runTimes: number;
 }
 
-const getTraceId = (levelZeroSide: Side, boardHash: string, index: number) => {
-  return `${levelZeroSide}-${boardHash}-${index}-`;
-};
+class NetworkNodeTable extends Model {
+  declare recordId: string;
+  declare index: number;
+  declare content: string;
+}
 
 const getSequelize = async () => {
   const { PROJECT_ROOT } = getConfig().serverRuntimeConfig;
@@ -28,10 +33,11 @@ const getSequelize = async () => {
 
   NetworkNodeTable.init(
     {
-      traceId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        primaryKey: true,
+      recordId: {
+        type: DataTypes.INTEGER,
+      },
+      index: {
+        type: DataTypes.INTEGER,
       },
       content: {
         type: DataTypes.TEXT,
@@ -40,64 +46,96 @@ const getSequelize = async () => {
     },
     { sequelize }
   );
-  await NetworkNodeTable.sync();
+
+  ExportRecordTable.init(
+    {
+      side: {
+        type: DataTypes.STRING,
+      },
+      boardHash: {
+        type: DataTypes.STRING,
+      },
+      maximumLevel: {
+        type: DataTypes.INTEGER,
+      },
+      runTimes: {
+        type: DataTypes.INTEGER,
+      },
+    },
+    { sequelize }
+  );
+
+  await Promise.all([NetworkNodeTable.sync(), ExportRecordTable.sync()]);
 
   return sequelize;
 };
 
 export const storeOpenSet = async (
-  levelZeroSide: Side,
+  side: Side,
   boardHash: string,
-  nodes: Array<Node>
+  nodes: Array<Node>,
+  maximumLevel: number,
+  runTimes: number
 ) => {
   const sequelize = await getSequelize();
   const networkNodes = nodes.map((node) => getNetworkNodeFromDataNode(node));
 
+  let recordId = -1;
+  const existingExportRecord = await ExportRecordTable.findOne({
+    where: { boardHash, maximumLevel, runTimes, side },
+  });
+
+  if (existingExportRecord) {
+    recordId = existingExportRecord.id;
+    await NetworkNodeTable.destroy({ where: { recordId } });
+  } else {
+    const newExportRecord = await ExportRecordTable.create({
+      boardHash,
+      maximumLevel,
+      runTimes,
+      side,
+    });
+    recordId = newExportRecord.id;
+  }
+
   const tableEntries = networkNodes.map((networkNode) => ({
-    traceId: getTraceId(levelZeroSide, boardHash, networkNode.index),
+    recordId,
+    index: networkNode.index,
     content: JSON.stringify(networkNode),
   }));
-
-  await NetworkNodeTable.destroy({
-    where: { traceId: tableEntries.map((item) => item.traceId) },
-  });
   await NetworkNodeTable.bulkCreate(tableEntries);
   await sequelize.close();
 };
 
-export const getFileOpenSet = async (
-  levelZeroSide: Side,
-  boardHash: string,
-  index: number
-) => {
+export const getOpenSetNetworkNodes = async (
+  side: Side,
+  boardHash: string
+): Promise<{
+  networkNodes: Array<NetworkNode>;
+  maximumLevel: number;
+  runTimes: number;
+}> => {
   const sequelize = await getSequelize();
-  const traceId = getTraceId(levelZeroSide, boardHash, index);
+  const exportRecords = await ExportRecordTable.findAll({
+    where: { boardHash, side },
+    order: [
+      ["runTimes", "desc"],
+      ["maximumLevel", "desc"],
+    ],
+  });
 
-  const primaryNetworkNode = await NetworkNodeTable.findByPk(traceId);
-  if (!primaryNetworkNode) {
+  if (!exportRecords.length) {
     await sequelize.close();
-    throw Error(`getFileOpenSet: cannot retrieve ${levelZeroSide} ${index}`);
+    throw Error("getFileOpenSet: no such record");
   }
 
-  const target = JSON.parse(primaryNetworkNode.content) as NetworkNode;
+  const bestExportRecord = exportRecords[0];
+  const { id: recordId, maximumLevel, runTimes } = bestExportRecord;
 
-  if (target.parent !== undefined) {
-    const parentTraceId = getTraceId(levelZeroSide, boardHash, target.parent);
-    const parentNetworkNode = await NetworkNodeTable.findByPk(parentTraceId);
-    if (parentNetworkNode)
-      target.parent = JSON.parse(parentNetworkNode.content);
-  }
-
-  target.children = await Promise.all(
-    target.children.map(async (childIndex) => {
-      const childTraceId = getTraceId(levelZeroSide, boardHash, childIndex);
-      const childNetworkNode = await NetworkNodeTable.findByPk(childTraceId);
-      return childNetworkNode
-        ? JSON.parse(childNetworkNode.content)
-        : childIndex;
-    })
+  const queryResult = await NetworkNodeTable.findAll({ where: { recordId } });
+  const networkNodes: Array<NetworkNode> = queryResult.map(({ content }) =>
+    JSON.parse(content)
   );
-
   await sequelize.close();
-  return target;
+  return { networkNodes, maximumLevel, runTimes };
 };

@@ -126,7 +126,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     storeOpenSet(
       levelZeroSide,
       getHashFromBoard(levelZeroNode.board),
-      result.openSet
+      result.openSet,
+      maximumLevel,
+      runTimes
     );
     console.log("finish storage");
   }
