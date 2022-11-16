@@ -42,8 +42,10 @@ export interface Node {
   isOpenForCalculation: boolean;
   // whether termination condition is reached
   isTerminated: boolean;
-  // connection nodes
+  // connection nodes: the one that generate current node
   parent?: Node;
+  // connection nodes: not the one generate current node, but can also generate current node
+  relatives: Array<Node>;
   // connection nodes
   children: Array<Node>;
 }
