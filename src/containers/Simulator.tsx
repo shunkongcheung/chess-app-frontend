@@ -15,6 +15,7 @@ interface IProps {
   exportTimes: number;
   increment: number;
   toBeMovedBy: Side;
+  maximumLevel: number;
 }
 
 interface State
@@ -68,6 +69,7 @@ const Simulator = ({
   increment,
   exportTimes,
   toBeMovedBy: levelZeroSide,
+  maximumLevel,
 }: IProps) => {
   const [state, setState] = useState<State>({
     openSet: [],
@@ -75,7 +77,7 @@ const Simulator = ({
     runTimes: 0,
     total: 1,
     timeTaken: 0,
-    maximumLevel: 0,
+    maximumLevel,
     pageNum: 1,
     pageSize: 1,
     isExport: false,
@@ -99,6 +101,7 @@ const Simulator = ({
         levelZeroSide,
         runTimes,
         isExport,
+        maximumLevel,
       });
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
       setState((oldState) => ({
@@ -111,7 +114,7 @@ const Simulator = ({
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
     },
-    [levelZeroSide, board]
+    [levelZeroSide, board, maximumLevel]
   );
 
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
