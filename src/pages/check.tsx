@@ -13,17 +13,6 @@ export const getServerSideProps = async ({
 }: GetServerSidePropsContext) => {
   const { shortHash, side, index } = query;
 
-  console.log("hello", { shortHash, side });
-
-  if (!shortHash || !side) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: true,
-      },
-    };
-  }
-
   const node = await getFileOpenSet(
     side as Side,
     shortHash as string,
