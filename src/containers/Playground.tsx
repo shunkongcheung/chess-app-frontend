@@ -20,9 +20,9 @@ interface IState {
   side: Side;
 }
 
-const Main = styled.div `
-width: 500px;
-`
+const Main = styled.div`
+  width: 500px;
+`;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -87,17 +87,18 @@ const Playground = ({ board, side, runTimes }: IProps) => {
       <Main>
         <Card
           descriptions={[
-            { title: "Run", value: runTimes} ,
-            { title: "Side", value: state.side} ,
-            { title: "Time taken", value: `${state.timeTaken}ms`} ,
-            { title: <button onClick={handleBack}>back</button>,
-              value: <button onClick={handleRun}>next</button>}
+            { title: "Run", value: runTimes },
+            { title: "Side", value: state.side },
+            { title: "Time taken", value: `${state.timeTaken}ms` },
+            {
+              title: <button onClick={handleBack}>back</button>,
+              value: <button onClick={handleRun}>next</button>,
+            },
           ]}
         >
           <div onClick={() => copyHash(state.records[0][0].board)}>
             <ChessBoard board={state.records[0][0].board} />
           </div>
-
         </Card>
       </Main>
     </Container>
