@@ -10,6 +10,7 @@ import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
 import DataStore, { LinkedListNode } from "./DataStore";
+import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
 interface Args {
   levelZeroScore: number;
@@ -33,8 +34,6 @@ interface InternalArgs extends Omit<Args, "openSet" | "runTimes"> {
 interface InternalRet extends Omit<Ret, "openSet"> {
   openSetStore: DataStore<Node>;
 }
-
-const PSEUDO_HIGH_PRIORITY = 2497866;
 
 const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
   if (runTimes <= 0) {
