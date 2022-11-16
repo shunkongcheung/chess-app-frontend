@@ -13,6 +13,8 @@ import {
 
 interface IProps {
   board: Board;
+  exportTimes: number;
+  increment: number;
   toBeMovedBy: Side;
 }
 
@@ -86,9 +88,6 @@ const TabItem = styled.div`
 `;
 
 const PAGE_SIZE = 50;
-const EXPORT_RUN_TIMES = 2000;
-// const INCREMENT = EXPORT_RUN_TIMES;
-const INCREMENT = 1;
 
 const copyHash = (board: Board) => {
   const text = getHashFromBoard(board);
@@ -104,7 +103,12 @@ const fetchData = async (payload: Payload) => {
   return result;
 };
 
-const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
+const Simulator = ({
+  board,
+  increment,
+  exportTimes,
+  toBeMovedBy: levelZeroSide,
+}: IProps) => {
   const initialSet = useRef<Array<Node>>([
     {
       index: 0,
@@ -290,13 +294,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                 <Title>
                   <button
                     onClick={async () => {
-                      await handleClick(
-                        1,
-                        false,
-                        false,
-                        EXPORT_RUN_TIMES,
-                        true
-                      );
+                      await handleClick(1, false, false, exportTimes, true);
                       const { query } = router;
                       router.push(
                         `/check?side=${query.side}&shortHash=${query.shortHash}`
@@ -314,7 +312,7 @@ const Simulator = ({ board, toBeMovedBy: levelZeroSide }: IProps) => {
                           old.pageNum,
                           old.isOpenOnly,
                           old.isSorted,
-                          old.runTimes + INCREMENT
+                          old.runTimes + increment
                         );
                         return old;
                       })
