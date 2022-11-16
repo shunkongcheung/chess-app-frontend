@@ -7,44 +7,34 @@ import {
   DEFAULT_INCREMENT,
   INITIAL_HASH,
   DEFAULT_RUN_TIMES,
-  DEFAULT_MAXIMUM_LEVEL,
 } from "../constants";
 
-const Simulate: NextPage = ({
-  board,
-  side,
-  exportTimes,
-  increment,
-  maximumLevel,
-}: any) => {
+const Simulate: NextPage = ({ board, side, exportTimes, increment }: any) => {
   return (
     <Simulator
       board={board}
       exportTimes={exportTimes}
       toBeMovedBy={side}
       increment={increment}
-      maximumLevel={maximumLevel}
     />
   );
 };
 
 export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
-  const { shortHash, side, increment, exportTimes, maximumLevel } = query;
+  const { shortHash, side, increment, exportTimes } = query;
 
   const fShortHash = shortHash ?? INITIAL_HASH;
   const fSide = side ?? Side.Bottom;
   const fIncrement = Number(increment ?? DEFAULT_INCREMENT);
   const fExportTimes = Number(exportTimes ?? DEFAULT_RUN_TIMES);
-  const fMaxmiumLevel = Number(maximumLevel ?? DEFAULT_MAXIMUM_LEVEL);
 
   let destination = `/simulate?`;
   destination += `side=${fSide}&`;
   destination += `shortHash=${fShortHash}&`;
   destination += `increment=${fIncrement}&`;
   destination += `exportTimes=${fExportTimes}&`;
-  destination += `maximumLevel=${fMaxmiumLevel}&`;
 
-  if (!shortHash || !side || !increment || !exportTimes || !maximumLevel) {
+  if (!shortHash || !side || !increment || !exportTimes) {
     return {
       redirect: { destination },
     };
@@ -57,7 +47,6 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
       side,
       increment: fIncrement,
       exportTimes: fExportTimes,
-      maximumLevel: fMaxmiumLevel,
     },
   };
 };

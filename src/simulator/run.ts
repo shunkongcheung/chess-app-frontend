@@ -16,7 +16,6 @@ interface Args {
   levelZeroScore: number;
   levelZeroSide: Side;
   openSet: Array<Node>;
-  maximumLevel: number;
   runTimes: number;
   onHundredCallback?: (runIdx: number, count: number) => any;
 }
@@ -79,7 +78,6 @@ const runHelper = ({
   levelZeroScore,
   levelZeroSide,
   openSetStore,
-  maximumLevel,
 }: InternalArgs): InternalRet => {
   const pointer = getPointer(openSetStore.head);
   if (!pointer) {
@@ -100,7 +98,6 @@ const runHelper = ({
     );
 
     const level = pointer.level + 1;
-    const isNextNodeAtMaxLevel = level > maximumLevel;
     const setLength = openSetStore.length;
 
     let newNodeCount = 0;
@@ -112,7 +109,7 @@ const runHelper = ({
           level,
           score,
           winner,
-          isTerminated: isNextNodeAtMaxLevel || winner !== Side.None,
+          isTerminated: winner !== Side.None,
           index: -1,
           parent: pointer,
           priority: getPriorityScore({
@@ -165,7 +162,7 @@ const runHelper = ({
     }
 
     pointer.priority = newPriority;
-    pointer.isTerminated = getIsNodeTerminated(pointer, maximumLevel);
+    pointer.isTerminated = getIsNodeTerminated(pointer);
     openSetStore.update(pointer);
   }
 

@@ -9,7 +9,6 @@ class ExportRecordTable extends Model {
   declare id: number;
   declare side: string;
   declare boardHash: string;
-  declare maximumLevel: number;
   declare runTimes: number;
 }
 
@@ -55,9 +54,6 @@ const getSequelize = async () => {
       boardHash: {
         type: DataTypes.STRING,
       },
-      maximumLevel: {
-        type: DataTypes.INTEGER,
-      },
       runTimes: {
         type: DataTypes.INTEGER,
       },
@@ -74,7 +70,6 @@ export const storeOpenSet = async (
   side: Side,
   boardHash: string,
   nodes: Array<Node>,
-  maximumLevel: number,
   runTimes: number
 ) => {
   const sequelize = await getSequelize();
@@ -82,7 +77,7 @@ export const storeOpenSet = async (
 
   let recordId = -1;
   const existingExportRecord = await ExportRecordTable.findOne({
-    where: { boardHash, maximumLevel, runTimes, side },
+    where: { boardHash, runTimes, side },
   });
 
   if (existingExportRecord) {
@@ -91,7 +86,6 @@ export const storeOpenSet = async (
   } else {
     const newExportRecord = await ExportRecordTable.create({
       boardHash,
-      maximumLevel,
       runTimes,
       side,
     });
@@ -110,24 +104,18 @@ export const storeOpenSet = async (
 export const getOpenSetNetworkNodes = async (
   side: Side,
   boardHash: string,
-  maximumLevel?: number,
   runTimes?: number
 ): Promise<{
   networkNodes: Array<NetworkNode>;
-  maximumLevel: number;
   runTimes: number;
 }> => {
   const sequelize = await getSequelize();
 
   const where: WhereOptions = { boardHash, side };
-  if (maximumLevel) where.maximumLevel = maximumLevel;
   if (runTimes) where.runTimes = { [Op.lte]: runTimes };
   const exportRecords = await ExportRecordTable.findAll({
     where,
-    order: [
-      ["runTimes", "desc"],
-      ["maximumLevel", "desc"],
-    ],
+    order: [["runTimes", "desc"]],
   });
 
   if (!exportRecords.length) {
@@ -145,7 +133,6 @@ export const getOpenSetNetworkNodes = async (
   await sequelize.close();
   return {
     networkNodes,
-    maximumLevel: bestExportRecord.maximumLevel,
     runTimes: bestExportRecord.runTimes,
   };
 };

@@ -12,7 +12,6 @@ interface IProps {
   currentNode: Node;
   levelZeroNode: Node;
   highestPriority: number;
-  maximumLevel: number;
   maxReachedLevel: number;
   runTimes: number;
 }
@@ -29,7 +28,6 @@ const Checker = ({
   highestPriority,
   levelZeroNode,
   maxReachedLevel,
-  maximumLevel,
   runTimes,
 }: IProps) => {
   const { query, push } = useRouter();
@@ -70,7 +68,6 @@ const Checker = ({
                 value: `${levelZeroNode.isTerminated}`,
               },
               { title: "--------", value: "" },
-              { title: "Maximum level", value: `${maximumLevel}` },
               { title: "Max. Level Reached", value: `${maxReachedLevel}` },
               { title: "--------", value: "" },
               { title: "Run Times", value: `${runTimes}` },

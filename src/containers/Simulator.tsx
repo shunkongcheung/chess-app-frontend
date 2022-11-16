@@ -5,21 +5,17 @@ import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
 import { Board, Side, Node } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
-import {
-  getNetworkNodeFromDataNode,
-  getOpenSetFromNetworkOpenSet,
-} from "../utils/NetworkNode";
+import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
 
 interface IProps {
   board: Board;
   exportTimes: number;
   increment: number;
   toBeMovedBy: Side;
-  maximumLevel: number;
 }
 
 interface State
-  extends Omit<Result, "pointer" | "nextNodes" | "levelOneNodes"> {
+  extends Omit<Result, "pointer" | "nextNodes" | "levelOneNodes" | "openSet"> {
   pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
@@ -69,7 +65,6 @@ const Simulator = ({
   increment,
   exportTimes,
   toBeMovedBy: levelZeroSide,
-  maximumLevel,
 }: IProps) => {
   const [state, setState] = useState<State>({
     openSet: [],
@@ -77,7 +72,6 @@ const Simulator = ({
     runTimes: 0,
     total: 1,
     timeTaken: 0,
-    maximumLevel,
     pageNum: 1,
     pageSize: 1,
     isExport: false,
@@ -101,7 +95,6 @@ const Simulator = ({
         levelZeroSide,
         runTimes,
         isExport,
-        maximumLevel,
       });
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
       setState((oldState) => ({
@@ -114,7 +107,7 @@ const Simulator = ({
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
     },
-    [levelZeroSide, board, maximumLevel]
+    [levelZeroSide, board]
   );
 
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;

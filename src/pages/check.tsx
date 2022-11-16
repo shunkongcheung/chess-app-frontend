@@ -8,7 +8,6 @@ import { INITIAL_HASH, PSEUDO_HIGH_PRIORITY } from "../constants";
 const Check: NextPage = ({
   levelZeroNode,
   highestPriority,
-  maximumLevel,
   runTimes,
   currentNode,
   maxReachedLevel,
@@ -18,7 +17,6 @@ const Check: NextPage = ({
       highestPriority={highestPriority}
       currentNode={currentNode}
       levelZeroNode={levelZeroNode}
-      maximumLevel={maximumLevel}
       maxReachedLevel={maxReachedLevel}
       runTimes={runTimes}
     />
@@ -45,7 +43,7 @@ export const getServerSideProps = async ({
     };
   }
 
-  const { networkNodes, runTimes, maximumLevel } = await getOpenSetNetworkNodes(
+  const { networkNodes, runTimes } = await getOpenSetNetworkNodes(
     side as Side,
     shortHash as string
   );
@@ -85,7 +83,6 @@ export const getServerSideProps = async ({
       currentNode,
       maxReachedLevel,
       runTimes,
-      maximumLevel,
       levelZeroNode,
       highestPriority,
     },

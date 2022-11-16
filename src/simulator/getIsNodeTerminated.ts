@@ -1,14 +1,11 @@
 import { Node, Side } from "../types";
 
-const getIsNodeTerminated = (node: Node, maximumLevel: number): boolean => {
+const getIsNodeTerminated = (node: Node): boolean => {
   // termination condition: already marked as terminated
   if (node.isTerminated) return true;
 
   // termination condition: has a winner
   if (node.winner !== Side.None) return true;
-
-  // termination condition: maximum level reached
-  if (node.level >= maximumLevel) return true;
 
   // TODO: is this valid? should be?
   // termination condition: all children are terminated

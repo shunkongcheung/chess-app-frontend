@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
-import { DEFAULT_MAXIMUM_LEVEL, DEFAULT_RUN_TIMES } from "../../constants";
+import { DEFAULT_RUN_TIMES } from "../../constants";
 import { nodeSorter, run } from "../../simulator";
 import { Side, Board, Node } from "../../types";
 import {
@@ -18,7 +18,6 @@ interface Params {
   isOpenOnly: boolean;
   isExport: boolean;
   runTimes: number;
-  maximumLevel: number;
 }
 
 export interface Payload extends Partial<Params> {
@@ -49,7 +48,6 @@ export default async function handler(
     runTimes = DEFAULT_RUN_TIMES,
     levelZeroSide,
     board,
-    maximumLevel = DEFAULT_MAXIMUM_LEVEL,
   } = payload;
 
   const [winner, score] = getBoardWinnerAndScore(board);
@@ -74,20 +72,16 @@ export default async function handler(
     const existingData = await getOpenSetNetworkNodes(
       levelZeroSide,
       boardHash,
-      maximumLevel,
       remainRunTimes
     );
     console.log(
-      `/api/simulate: data exists ${maximumLevel} -- ${existingData.runTimes} -- ${remainRunTimes}`
+      `/api/simulate: data exists ${existingData.runTimes} -- ${remainRunTimes}`
     );
-    if (
-      existingData.maximumLevel === maximumLevel &&
-      existingData.runTimes <= remainRunTimes
-    ) {
+    if (existingData.runTimes <= remainRunTimes) {
       openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
       remainRunTimes -= existingData.runTimes;
       console.log(
-        `/api/simulate: starter ${maximumLevel} -- ${existingData.runTimes} -- ${remainRunTimes}`
+        `/api/simulate: starter ${existingData.runTimes} -- ${remainRunTimes}`
       );
     }
   } catch {}
@@ -105,7 +99,6 @@ export default async function handler(
     levelZeroScore: levelZeroNode.score,
     levelZeroSide,
     openSet,
-    maximumLevel,
     runTimes: remainRunTimes,
     onHundredCallback,
   });
@@ -133,7 +126,6 @@ export default async function handler(
     isOpenOnly,
     isExport,
     runTimes,
-    maximumLevel,
     total: result.openSet.length,
     pointer: result.pointer
       ? getNetworkNodeFromDataNode(result.pointer)
@@ -154,13 +146,7 @@ export default async function handler(
   res.status(200).json(response);
 
   if (isExport) {
-    storeOpenSet(
-      levelZeroSide,
-      boardHash,
-      result.openSet,
-      maximumLevel,
-      runTimes
-    );
+    storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
     console.log("finish storage");
   }
 }
