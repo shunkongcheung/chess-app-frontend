@@ -18,7 +18,7 @@ interface IProps {
 }
 
 interface State
-  extends Omit<Result, "pointer" | "openSet" | "nextNodes" | "levelOneNodes"> {
+  extends Omit<Result, "pointer" | "nextNodes" | "levelOneNodes"> {
   pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
@@ -69,23 +69,8 @@ const Simulator = ({
   exportTimes,
   toBeMovedBy: levelZeroSide,
 }: IProps) => {
-  const initialSet = useRef<Array<Node>>([
-    {
-      index: 0,
-      board,
-      level: 0,
-      score: getBoardWinnerAndScore(board)[1],
-      winner: Side.None,
-      isTerminated: false,
-      priority: 0,
-      relatives: [],
-      children: [],
-      isOpenForCalculation: true,
-    },
-  ]);
-
   const [state, setState] = useState<State>({
-    openSet: initialSet.current,
+    openSet: [],
     nextNodes: [],
     runTimes: 0,
     total: 1,
@@ -93,6 +78,7 @@ const Simulator = ({
     maximumLevel: 0,
     pageNum: 1,
     pageSize: 1,
+    isExport: false,
     isOpenOnly: false,
     isSorted: false,
   });
@@ -105,12 +91,11 @@ const Simulator = ({
       runTimes: number,
       isExport = false
     ) => {
-      const networkOpenSet = initialSet.current.map(getNetworkNodeFromDataNode);
       const response = await fetchData({
         pageNum,
         isOpenOnly,
         isSorted,
-        openSet: networkOpenSet,
+        board,
         levelZeroSide,
         runTimes,
         isExport,
@@ -126,7 +111,7 @@ const Simulator = ({
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
     },
-    [levelZeroSide]
+    [levelZeroSide, board]
   );
 
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;

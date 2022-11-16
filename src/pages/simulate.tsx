@@ -25,8 +25,8 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
 
   const fShortHash = shortHash ?? INITIAL_HASH;
   const fSide = side ?? Side.Bottom;
-  const fIncrement = increment ?? DEFAULT_INCREMENT;
-  const fExportTimes = exportTimes ?? DEFAULT_RUN_TIMES;
+  const fIncrement = Number(increment ?? DEFAULT_INCREMENT);
+  const fExportTimes = Number(exportTimes ?? DEFAULT_RUN_TIMES);
 
   let destination = `/simulate?`;
   destination += `side=${fSide}&`;
@@ -41,7 +41,9 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
   }
 
   const board = getBoardFromHash(fShortHash as string);
-  return { props: { board, side, increment, exportTimes } };
+  return {
+    props: { board, side, increment: fIncrement, exportTimes: fExportTimes },
+  };
 };
 
 export default Simulate;
