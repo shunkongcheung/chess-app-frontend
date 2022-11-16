@@ -1,4 +1,4 @@
-import { DataTypes, Sequelize, Model } from "sequelize";
+import { DataTypes, Sequelize, Model, WhereOptions, Op } from "sequelize";
 import path from "path";
 import getConfig from "next/config";
 
@@ -109,15 +109,21 @@ export const storeOpenSet = async (
 
 export const getOpenSetNetworkNodes = async (
   side: Side,
-  boardHash: string
+  boardHash: string,
+  maximumLevel?: number,
+  runTimes?: number
 ): Promise<{
   networkNodes: Array<NetworkNode>;
   maximumLevel: number;
   runTimes: number;
 }> => {
   const sequelize = await getSequelize();
+
+  const where: WhereOptions = { boardHash, side };
+  if (maximumLevel) where.maximumLevel = maximumLevel;
+  if (runTimes) where.runTimes = { [Op.lte]: runTimes };
   const exportRecords = await ExportRecordTable.findAll({
-    where: { boardHash, side },
+    where,
     order: [
       ["runTimes", "desc"],
       ["maximumLevel", "desc"],
@@ -130,12 +136,16 @@ export const getOpenSetNetworkNodes = async (
   }
 
   const bestExportRecord = exportRecords[0];
-  const { id: recordId, maximumLevel, runTimes } = bestExportRecord;
+  const recordId = bestExportRecord.id;
 
   const queryResult = await NetworkNodeTable.findAll({ where: { recordId } });
   const networkNodes: Array<NetworkNode> = queryResult.map(({ content }) =>
     JSON.parse(content)
   );
   await sequelize.close();
-  return { networkNodes, maximumLevel, runTimes };
+  return {
+    networkNodes,
+    maximumLevel: bestExportRecord.maximumLevel,
+    runTimes: bestExportRecord.runTimes,
+  };
 };
