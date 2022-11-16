@@ -2,13 +2,14 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_MAXIMUM_LEVEL, DEFAULT_RUN_TIMES } from "../../constants";
 import { nodeSorter, run } from "../../simulator";
-import { Side, Board } from "../../types";
+import { Side, Board, Node } from "../../types";
 import {
   NetworkNode,
   getNetworkNodeFromDataNode,
+  getOpenSetFromNetworkOpenSet,
 } from "../../utils/NetworkNode";
 
-import { storeOpenSet } from "../../utils/Storage";
+import { getOpenSetNetworkNodes, storeOpenSet } from "../../utils/Storage";
 
 interface Params {
   pageNum: number;
@@ -34,7 +35,10 @@ export interface Result extends Params {
   nextNodes: Array<NetworkNode>;
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const payload = JSON.parse(req.body) as Payload;
   const {
     pageNum = 1,
@@ -49,7 +53,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   } = payload;
 
   const [winner, score] = getBoardWinnerAndScore(board);
-  const openSet = [
+  let openSet: Array<Node> = [
     {
       index: 0,
       board,
@@ -63,10 +67,37 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       isOpenForCalculation: true,
     },
   ];
+
+  const boardHash = getHashFromBoard(board);
+  let remainRunTimes = runTimes;
+  try {
+    const existingData = await getOpenSetNetworkNodes(
+      levelZeroSide,
+      boardHash,
+      maximumLevel,
+      remainRunTimes
+    );
+    console.log(
+      `/api/simulate: data exists ${maximumLevel} -- ${existingData.runTimes} -- ${remainRunTimes}`
+    );
+    if (
+      existingData.maximumLevel === maximumLevel &&
+      existingData.runTimes <= remainRunTimes
+    ) {
+      openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
+      remainRunTimes -= existingData.runTimes;
+      console.log(
+        `/api/simulate: starter ${maximumLevel} -- ${existingData.runTimes} -- ${remainRunTimes}`
+      );
+    }
+  } catch {}
+
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
   const onHundredCallback = (idx: number, length: number) => {
-    console.log(`${idx}: ${performance.now() - startTime}ms - ${length}`);
+    console.log(
+      `/api/simulate: ${idx} -- ${performance.now() - startTime}ms -- ${length}`
+    );
   };
 
   const startTime = performance.now();
@@ -75,7 +106,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     levelZeroSide,
     openSet,
     maximumLevel,
-    runTimes,
+    runTimes: remainRunTimes,
     onHundredCallback,
   });
   const endTime = performance.now();
@@ -125,7 +156,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (isExport) {
     storeOpenSet(
       levelZeroSide,
-      getHashFromBoard(levelZeroNode.board),
+      boardHash,
       result.openSet,
       maximumLevel,
       runTimes
