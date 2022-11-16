@@ -58,7 +58,8 @@ export const storeOpenSet = async (
     content: JSON.stringify(networkNode),
   }));
 
-  await NetworkNodeTable.bulkCreate(tableEntries, { ignoreDuplicates: true });
+  await NetworkNodeTable.destroy({ where: { traceId:  tableEntries.map(item => item.traceId)  } });
+  await NetworkNodeTable.bulkCreate(tableEntries);
   await sequelize.close();
 };
 
