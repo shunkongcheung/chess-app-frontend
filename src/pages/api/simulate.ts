@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
 import { nodeSorter, run } from "../../simulator";
+import DataStore from "../../simulator/DataStore";
 import { Side, Board, Node } from "../../types";
 import {
   NetworkNode,
@@ -77,9 +78,10 @@ export default async function handler(
     console.log(
       `/api/simulate: data exists ${existingData.runTimes} -- ${remainRunTimes}`
     );
+
     if (existingData.runTimes <= remainRunTimes) {
-      openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
       remainRunTimes -= existingData.runTimes;
+      openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
       console.log(
         `/api/simulate: starter ${existingData.runTimes} -- ${remainRunTimes}`
       );
@@ -88,19 +90,25 @@ export default async function handler(
 
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
-  const onHundredCallback = (idx: number, length: number) => {
+  const onIntervalCallback = async (idx: number, store: DataStore<Node>) => {
+    if (isExport) {
+      const openSet = store.asArray();
+      await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);
+    }
     console.log(
-      `/api/simulate: ${idx} -- ${performance.now() - startTime}ms -- ${length}`
+      `/api/simulate: ${idx} -- ${performance.now() - startTime}ms -- ${
+        store.length
+      }`
     );
   };
 
   const startTime = performance.now();
-  let result = run({
+  let result = await run({
     levelZeroScore: levelZeroNode.score,
     levelZeroSide,
     openSet,
     runTimes: remainRunTimes,
-    onHundredCallback,
+    onIntervalCallback,
   });
   const endTime = performance.now();
 
@@ -140,13 +148,13 @@ export default async function handler(
 
   const totalTime = performance.now() - startTime;
   console.log(
-    `finished (${runTimes}}: ${totalTime}ms - ${result.openSet.length}`
+    `/api/simulate: finished (${runTimes}}: ${totalTime}ms - ${result.openSet.length}`
   );
 
   res.status(200).json(response);
 
   if (isExport) {
-    storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
-    console.log("finish storage");
+    await storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
+    console.log("/api/simulate: finish storage");
   }
 }

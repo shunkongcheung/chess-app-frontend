@@ -13,11 +13,16 @@ import DataStore, { LinkedListNode } from "./DataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
 interface Args {
+  callbackInterval?: number;
   levelZeroScore: number;
   levelZeroSide: Side;
   openSet: Array<Node>;
+  onIntervalCallback?: (
+    runIdx: number,
+    dataStore: DataStore<Node>,
+    rest: Omit<Ret, "openSet">
+  ) => any;
   runTimes: number;
-  onHundredCallback?: (runIdx: number, count: number) => any;
 }
 
 interface Ret {
@@ -34,7 +39,13 @@ interface InternalRet extends Omit<Ret, "openSet"> {
   openSetStore: DataStore<Node>;
 }
 
-const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
+const run = async ({
+  callbackInterval = 1000,
+  onIntervalCallback,
+  openSet,
+  runTimes,
+  ...args
+}: Args) => {
   if (runTimes <= 0) {
     return { openSet, nextNodes: [] };
   }
@@ -50,8 +61,9 @@ const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
   for (let idx = 1; idx < runTimes; idx++) {
     ret = runHelper({ ...args, openSetStore: ret.openSetStore });
 
-    if (onHundredCallback && idx % 100 === 0) {
-      onHundredCallback(idx, ret.openSetStore.length);
+    if (onIntervalCallback && idx % callbackInterval === 0) {
+      const { openSetStore: debugStore, ...rest } = ret;
+      await onIntervalCallback(idx, debugStore, rest);
     }
   }
 
