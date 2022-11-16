@@ -1,6 +1,9 @@
-import { Node } from "../types";
+interface SortNode {
+  level: number;
+  priority: number;
+}
 
-const nodeSorter = (left: Node, right: Node) => {
+const nodeSorter = (left: SortNode, right: SortNode) => {
   if (left.priority > right.priority) return -1;
   if (left.priority < right.priority) return 1;
 
