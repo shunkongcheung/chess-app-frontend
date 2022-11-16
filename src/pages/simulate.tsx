@@ -10,7 +10,13 @@ import {
   DEFAULT_MAXIMUM_LEVEL,
 } from "../constants";
 
-const Simulate: NextPage = ({ board, side, exportTimes, increment, maximumLevel }: any) => {
+const Simulate: NextPage = ({
+  board,
+  side,
+  exportTimes,
+  increment,
+  maximumLevel,
+}: any) => {
   return (
     <Simulator
       board={board}
@@ -46,7 +52,13 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
 
   const board = getBoardFromHash(fShortHash as string);
   return {
-    props: { board, side, increment: fIncrement, exportTimes: fExportTimes, maximumLevel: fMaxmiumLevel },
+    props: {
+      board,
+      side,
+      increment: fIncrement,
+      exportTimes: fExportTimes,
+      maximumLevel: fMaxmiumLevel,
+    },
   };
 };
 
