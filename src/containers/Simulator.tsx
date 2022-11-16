@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/router";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -137,7 +136,6 @@ const Simulator = ({
     isSorted: false,
   });
 
-  const router = useRouter();
 
   const handleClick = useCallback(
     async (
@@ -293,13 +291,7 @@ const Simulator = ({
               <Desc>
                 <Title>
                   <button
-                    onClick={async () => {
-                      await handleClick(1, false, false, exportTimes, true);
-                      const { query } = router;
-                      router.push(
-                        `/check?side=${query.side}&shortHash=${query.shortHash}`
-                      );
-                    }}
+                    onClick={async () => await handleClick(1, false, false, exportTimes, true)}
                   >
                     export
                   </button>
