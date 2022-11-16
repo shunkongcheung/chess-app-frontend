@@ -41,15 +41,20 @@ const run = ({ onHundredCallback, openSet, runTimes, ...args }: Args) => {
     return { openSet, nextNodes: [] };
   }
 
-  const getKeyFromNode = (node: Node) => getHashFromBoard(node.board);
+  const getKeyFromNode = (node: Node) => {
+    const boardHash = getHashFromBoard(node.board);
+    return `${boardHash}_${node.level % 2}`;
+  };
+
   const openSetStore = new DataStore<Node>(getKeyFromNode, nodeSorter, openSet);
 
   let ret = runHelper({ ...args, openSetStore });
   for (let idx = 1; idx < runTimes; idx++) {
     ret = runHelper({ ...args, openSetStore: ret.openSetStore });
 
-    if (onHundredCallback && idx % 100 === 0)
+    if (onHundredCallback && idx % 100 === 0) {
       onHundredCallback(idx, ret.openSetStore.length);
+    }
   }
 
   // before returning, ensure no level 1 node is at PSEUDO_HIGH_PRIORITY
@@ -96,9 +101,10 @@ const runHelper = ({
     );
 
     const level = pointer.level + 1;
-    const isNextNodeAtMaxLevel = level >= maximumLevel;
+    const isNextNodeAtMaxLevel = level > maximumLevel;
     const setLength = openSetStore.length;
 
+    let newNodeCount = 0;
     nextNodes = nextBoards
       .map((board) => {
         const [winner, score] = getBoardWinnerAndScore(board);
@@ -122,28 +128,25 @@ const runHelper = ({
         };
         return node;
       })
-      .filter((node) => {
+      .map((node) => {
         const existingNode = openSetStore.getNode(node);
         if (existingNode) {
           existingNode.relatives.push(pointer);
+          return existingNode;
         }
-        return !existingNode;
-      })
-      .map((node, index) => {
-        // update index after filtering
-        node.index = setLength + index;
+        node.index = setLength + newNodeCount;
+        newNodeCount += 1;
+        openSetStore.insert(node);
         return node;
       });
 
     // update parent's children
     pointer.children = nextNodes;
-    nextNodes.map((node) => openSetStore.insert(node));
-
-    if (!nextNodes.length) {
-      pointer.isTerminated = true;
-    }
   }
 
+  if (!pointer.children.length) {
+    pointer.isTerminated = true;
+  }
   if (pointer.children.length) {
     const childrenPriorities = pointer.children.map((node) => node.priority);
     const newPriority = -Math.max(...childrenPriorities);
@@ -157,8 +160,8 @@ const runHelper = ({
 
       pointer.relatives.map((relative) => {
         relative.isOpenForCalculation = true;
-        relative.priority = PSEUDO_HIGH_PRIORITY;
-        openSetStore.update(relative);
+        // relative.priority = PSEUDO_HIGH_PRIORITY;
+        // openSetStore.update(relative);
       });
     }
 
