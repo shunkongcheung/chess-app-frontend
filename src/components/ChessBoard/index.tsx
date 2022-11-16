@@ -2,9 +2,9 @@ import React, { memo, useCallback } from "react";
 import styled from "styled-components";
 
 import { Board, Position } from "../../types";
-import ChessPiece from "../ChessPiece";
+import ChessPiece from "./ChessPiece";
 
-interface ChessBoardProps {
+interface IProps {
   board: Board;
   handleSelect?: (position: Position) => any;
   selectedChess?: Position;
@@ -28,11 +28,7 @@ const PieceContainer = styled.div<{
   height: 100%;
 `;
 
-const ChessBoard: React.FC<ChessBoardProps> = ({
-  board,
-  handleSelect,
-  selectedChess,
-}) => {
+const ChessBoard = ({ board, handleSelect, selectedChess }: IProps) => {
   const boardWidth = board[0].length;
   const boardHeight = board.length;
 

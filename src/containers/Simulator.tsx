@@ -3,7 +3,7 @@ import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
 import { Board, Side, Node } from "../types";
-import ChessBoard from "../components/ChessBoard";
+import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
 import {
   getNetworkNodeFromDataNode,
@@ -24,41 +24,20 @@ interface State
   nextNodes: Array<Node>; // debug only
 }
 
-const Container = styled.div`
-  max-width: 1080px;
-  margin-left: auto;
-  margin-right: auto;
+const MyContainer = styled(Container)`
   display: grid;
   grid-template-columns: 4fr 1fr;
-  flex-wrap: wrap;
   gap: 30px;
-`;
-
-const Card = styled.div`
-  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.2), 0 4px 20px 0 rgba(0, 0, 0, 0.19);
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-const Desc = styled.li`
-  display: flex;
-  justify-content: space-between;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
 `;
 
 const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+  display: grid;
+  grid-template-rows: 3fr 3fr;
+  height: 95vh;
 `;
 
 const SecondaryContainer = styled.div`
-  height: 100vh;
-  overflow-y: auto;
-  gap: 30px;
-  display: flex;
-  flex-direction: column;
+  height: 95vh;
 `;
 
 const MainContent = styled.div`
@@ -66,25 +45,6 @@ const MainContent = styled.div`
   grid-template-columns: repeat(4, 1fr);
   gap: 30px;
   margin-right: auto;
-`;
-
-const Title = styled.div`
-  font-weight: bold;
-`;
-
-const Value = styled.div``;
-
-const TabControl = styled.div`
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  max-height: 57vh;
-  overflow-y: auto;
-`;
-
-const TabItem = styled.div`
-  width: 250px;
 `;
 
 const PAGE_SIZE = 50;
@@ -176,263 +136,210 @@ const Simulator = ({
   const isNextPageAvailable = state.pageNum < totalPage;
 
   return (
-    <Container>
+    <MyContainer>
       <LeftColumn>
         <MainContent>
           <div>
-            <Card>
+            <Card
+              descriptions={[
+                { title: "Level side", value: levelZeroSide },
+                { title: "Score", value: getBoardWinnerAndScore(board)[1] },
+                { title: "#", value: state.runTimes },
+                { title: "Time", value: state.timeTaken },
+                { title: "Count", value: state.total },
+                { title: "Page", value: `${state.pageNum}/${totalPage}` },
+                {
+                  title: (
+                    <button
+                      onClick={() =>
+                        setState((old) => {
+                          handleClick(
+                            old.pageNum,
+                            !old.isOpenOnly,
+                            old.isSorted,
+                            old.runTimes
+                          );
+                          return old;
+                        })
+                      }
+                    >
+                      Open: {`${state.isOpenOnly}`}
+                    </button>
+                  ),
+                  value: (
+                    <button
+                      onClick={() =>
+                        setState((old) => {
+                          handleClick(
+                            old.pageNum,
+                            old.isOpenOnly,
+                            !old.isSorted,
+                            old.runTimes
+                          );
+                          return old;
+                        })
+                      }
+                    >
+                      Sorted: {`${state.isSorted}`}
+                    </button>
+                  ),
+                },
+                {
+                  title: (
+                    <button
+                      disabled={!isPrevPageAvailable}
+                      onClick={() =>
+                        isPrevPageAvailable &&
+                        setState((old) => {
+                          handleClick(
+                            old.pageNum - 1,
+                            old.isOpenOnly,
+                            old.isSorted,
+                            old.runTimes
+                          );
+                          return old;
+                        })
+                      }
+                    >
+                      prev
+                    </button>
+                  ),
+                  value: (
+                    <button
+                      disabled={!isNextPageAvailable}
+                      onClick={() =>
+                        isNextPageAvailable &&
+                        setState((old) => {
+                          handleClick(
+                            old.pageNum + 1,
+                            old.isOpenOnly,
+                            old.isSorted,
+                            old.runTimes
+                          );
+                          return old;
+                        })
+                      }
+                    >
+                      next
+                    </button>
+                  ),
+                },
+                {
+                  title: (
+                    <button
+                      onClick={async () =>
+                        await handleClick(1, false, false, exportTimes, true)
+                      }
+                    >
+                      export
+                    </button>
+                  ),
+
+                  value: (
+                    <button
+                      onClick={() =>
+                        setState((old) => {
+                          handleClick(
+                            old.pageNum,
+                            old.isOpenOnly,
+                            old.isSorted,
+                            old.runTimes + increment
+                          );
+                          return old;
+                        })
+                      }
+                    >
+                      run
+                    </button>
+                  ),
+                },
+              ]}
+            >
               <ChessBoard board={board} />
-              <Desc>
-                <Title>Level Side</Title>
-                <Value>{levelZeroSide}</Value>
-              </Desc>
-              <Desc>
-                <Title>Score</Title>
-                <Value>{getBoardWinnerAndScore(board)[1]}</Value>
-              </Desc>
-              <Desc>
-                <Title>#</Title>
-                <Value>{state.runTimes}</Value>
-              </Desc>
-              <Desc>
-                <Title>Time</Title>
-                <Value>{state.timeTaken} ms</Value>
-              </Desc>
-              <Desc>
-                <Title>Count</Title>
-                <Value>{state.total}</Value>
-              </Desc>
-              <Desc>
-                <Title>Maximum level</Title>
-                <Value>{state.maximumLevel}</Value>
-              </Desc>
-              <Desc>
-                <Title>Page</Title>
-                <Value>
-                  {state.pageNum}/{totalPage}
-                </Value>
-              </Desc>
-              <Desc>
-                <Title>
-                  <button
-                    onClick={() =>
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum,
-                          !old.isOpenOnly,
-                          old.isSorted,
-                          old.runTimes
-                        );
-                        return old;
-                      })
-                    }
-                  >
-                    Open: {`${state.isOpenOnly}`}
-                  </button>
-                </Title>
-                <Value>
-                  <button
-                    onClick={() =>
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum,
-                          old.isOpenOnly,
-                          !old.isSorted,
-                          old.runTimes
-                        );
-                        return old;
-                      })
-                    }
-                  >
-                    Sorted: {`${state.isSorted}`}
-                  </button>
-                </Value>
-              </Desc>
-              <Desc>
-                <Title>
-                  <button
-                    disabled={!isPrevPageAvailable}
-                    onClick={() =>
-                      isPrevPageAvailable &&
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum - 1,
-                          old.isOpenOnly,
-                          old.isSorted,
-                          old.runTimes
-                        );
-                        return old;
-                      })
-                    }
-                  >
-                    prev
-                  </button>
-                </Title>
-                <Value>
-                  <button
-                    disabled={!isNextPageAvailable}
-                    onClick={() =>
-                      isNextPageAvailable &&
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum + 1,
-                          old.isOpenOnly,
-                          old.isSorted,
-                          old.runTimes
-                        );
-                        return old;
-                      })
-                    }
-                  >
-                    next
-                  </button>
-                </Value>
-              </Desc>
-              <Desc>
-                <Title>
-                  <button
-                    onClick={async () =>
-                      await handleClick(1, false, false, exportTimes, true)
-                    }
-                  >
-                    export
-                  </button>
-                </Title>
-                <Value>
-                  <button
-                    onClick={() =>
-                      setState((old) => {
-                        handleClick(
-                          old.pageNum,
-                          old.isOpenOnly,
-                          old.isSorted,
-                          old.runTimes + increment
-                        );
-                        return old;
-                      })
-                    }
-                  >
-                    run
-                  </button>
-                </Value>
-              </Desc>
             </Card>
           </div>
           <div>
             {state.pointer && (
-              <Card>
+              <Card
+                descriptions={[
+                  {
+                    title: "Level Side",
+                    value:
+                      state.pointer.level % 2 === 0
+                        ? levelZeroSide
+                        : levelOneSide,
+                  },
+                  { title: "Score", value: state.pointer.score },
+                  { title: "Winner", value: state.pointer.winner },
+                  { title: "Level", value: state.pointer.level },
+                  { title: "Priority", value: state.pointer.priority },
+                  {
+                    title: "Is Open",
+                    value: `${state.pointer.isOpenForCalculation}`,
+                  },
+                  {
+                    title: "Is Terminated",
+                    value: `${state.pointer.isTerminated}`,
+                  },
+                ]}
+              >
                 <div
                   onClick={() => state.pointer && copyHash(state.pointer.board)}
                 >
                   <ChessBoard board={state.pointer.board} />
                 </div>
-                <Desc>
-                  <Title>Level Side</Title>
-                  <Value>
-                    {state.pointer.level % 2 === 0
-                      ? levelZeroSide
-                      : levelOneSide}
-                  </Value>
-                </Desc>
-                <Desc>
-                  <Title>Score</Title>
-                  <Value>{state.pointer.score}</Value>
-                </Desc>
-                <Desc>
-                  <Title>Winner</Title>
-                  <Value>{state.pointer.winner}</Value>
-                </Desc>
-                <Desc>
-                  <Title>Level</Title>
-                  <Value>{state.pointer.level}</Value>
-                </Desc>
-                <Desc>
-                  <Title>Priority</Title>
-                  <Value>{state.pointer.priority}</Value>
-                </Desc>
-                <Desc>
-                  <Title>Is Open</Title>
-                  <Value>{`${state.pointer.isOpenForCalculation}`}</Value>
-                </Desc>
-                <Desc>
-                  <Title>Is Terminated</Title>
-                  <Value>{`${state.pointer.isTerminated}`}</Value>
-                </Desc>
               </Card>
             )}
           </div>
         </MainContent>
-        <TabControl>
-          {state.openSet.map((node, index) => {
+        <ScrollList
+          columns={4}
+          listItems={state.openSet.map((node) => {
             const selectedSide =
               node.level % 2 === 0 ? levelZeroSide : levelOneSide;
 
             return (
-              <TabItem key={index}>
-                <Card>
-                  <div onClick={() => copyHash(node.board)}>
-                    <ChessBoard board={node.board} />
-                  </div>
-                  <Desc>
-                    <Title>Index</Title>
-                    <Value>{node.index}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Level Side</Title>
-                    <Value>{selectedSide}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Score</Title>
-                    <Value>{node.score}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Winner</Title>
-                    <Value>{node.winner}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Level</Title>
-                    <Value>{node.level}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Priority</Title>
-                    <Value>{node.priority}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Is Open</Title>
-                    <Value>{`${node.isOpenForCalculation}`}</Value>
-                  </Desc>
-                  <Desc>
-                    <Title>Is Terminated</Title>
-                    <Value>{`${node.isTerminated}`}</Value>
-                  </Desc>
-                </Card>
-              </TabItem>
+              <Card
+                key={`ScrollListItem-${node.index}`}
+                descriptions={[
+                  { title: "Index", value: node.index },
+                  { title: "Level Side", value: selectedSide },
+                  { title: "Score", value: node.score },
+                  { title: "Winner", value: node.winner },
+                  { title: "Level", value: node.level },
+                  { title: "Priority", value: node.priority },
+                  { title: "Is Open", value: `${node.isOpenForCalculation}` },
+                  { title: "Is Terminated", value: `${node.isTerminated}` },
+                ]}
+              >
+                <div onClick={() => copyHash(node.board)}>
+                  <ChessBoard board={node.board} />
+                </div>
+              </Card>
             );
           })}
-        </TabControl>
+        />
       </LeftColumn>
       <SecondaryContainer>
-        {(state.nextNodes || []).map((node, index) => (
-          <Card key={`NextNode-${index}`}>
-            <div onClick={() => copyHash(board)}>
-              <ChessBoard board={node.board} />
-            </div>
-            <Desc>
-              <Title>Level</Title>
-              <Value>{node.level}</Value>
-            </Desc>
-            <Desc>
-              <Title>Score</Title>
-              <Value>{node.score}</Value>
-            </Desc>
-            <Desc>
-              <Title>Priority</Title>
-              <Value>{node.priority}</Value>
-            </Desc>
-          </Card>
-        ))}
+        <ScrollList
+          columns={1}
+          listItems={(state.nextNodes || []).map((node, index) => (
+            <Card
+              key={`NextNode-${index}`}
+              descriptions={[
+                { title: "Level", value: node.level },
+                { title: "Score", value: node.score },
+                { title: "Priority", value: node.priority },
+              ]}
+            >
+              <div onClick={() => copyHash(board)}>
+                <ChessBoard board={node.board} />
+              </div>
+            </Card>
+          ))}
+        />
       </SecondaryContainer>
-    </Container>
+    </MyContainer>
   );
 };
 

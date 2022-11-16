@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from "react";
 import styled, { keyframes } from "styled-components";
 
-interface ChessPieceProps {
+interface IProps {
   pieceCode: string;
   handleClick?: () => any;
   isSelected: boolean;
@@ -25,11 +25,7 @@ const Container = styled.img<{ disable: boolean; isSelected: boolean }>`
     infinite;
 `;
 
-const ChessPiece: React.FC<ChessPieceProps> = ({
-  pieceCode,
-  handleClick,
-  isSelected,
-}) => {
+const ChessPiece = ({ pieceCode, handleClick, isSelected }: IProps) => {
   const getPieceOffset = useCallback((pieceCode: string) => {
     const codeOrder = ["g", "k", "j", "c", "h", "a", "s"];
     return codeOrder.findIndex((item) => item === pieceCode);
