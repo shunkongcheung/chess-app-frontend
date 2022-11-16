@@ -9,7 +9,12 @@ import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
 import { nodeSorter } from "../simulator";
 
 interface IProps {
-  node: Node;
+  currentNode: Node;
+  levelZeroNode: Node;
+  highestPriority: number;
+  maximumLevel: number;
+  maxReachedLevel: number;
+  runTimes: number;
 }
 
 const MainContent = styled.div`
@@ -19,7 +24,14 @@ const MainContent = styled.div`
   margin-right: auto;
 `;
 
-const Checker = ({ node }: IProps) => {
+const Checker = ({
+  currentNode,
+  highestPriority,
+  levelZeroNode,
+  maxReachedLevel,
+  maximumLevel,
+  runTimes,
+}: IProps) => {
   const { query, push } = useRouter();
   const { side: levelZeroSide } = query;
   const [state, setState] = useState({ isSorted: true });
@@ -32,8 +44,8 @@ const Checker = ({ node }: IProps) => {
   };
 
   const filteredChildren = state.isSorted
-    ? [...node.children].sort(nodeSorter)
-    : node.children;
+    ? [...currentNode.children].sort(nodeSorter)
+    : currentNode.children;
 
   return (
     <Container>
@@ -42,15 +54,23 @@ const Checker = ({ node }: IProps) => {
           <Card
             descriptions={[
               {
-                title: "Level Side",
-                value: node.level % 2 === 0 ? levelZeroSide : levelOneSide,
+                title: "Score",
+                value: getBoardWinnerAndScore(levelZeroNode.board)[1],
               },
-              { title: "Score", value: getBoardWinnerAndScore(node.board)[1] },
-              { title: "Winner", value: node.winner },
-              { title: "Level", value: node.level },
-              { title: "Priority", value: node.priority },
-              { title: " Is Open", value: `${node.isOpenForCalculation}` },
-              { title: " Is Terminated", value: `${node.isTerminated}` },
+              {
+                title: "Is Open",
+                value: `${levelZeroNode.isOpenForCalculation}`,
+              },
+              {
+                title: "Is Terminated",
+                value: `${levelZeroNode.isTerminated}`,
+              },
+              { title: "--------", value: "" },
+              { title: "Maximum level", value: `${maximumLevel}` },
+              { title: "Max. Level Reached", value: `${maxReachedLevel}` },
+              { title: "--------", value: "" },
+              { title: "Run Times", value: `${runTimes}` },
+              { title: "Highest Priority", value: `${highestPriority}` },
               {
                 title: "",
                 value: (
@@ -65,36 +85,65 @@ const Checker = ({ node }: IProps) => {
               },
             ]}
           >
-            <ChessBoard board={node.board} />
+            <ChessBoard board={levelZeroNode.board} />
           </Card>
         </div>
         <div>
-          {node.parent && (
+          <Card
+            descriptions={[
+              {
+                title: "Level Side",
+                value:
+                  currentNode.level % 2 === 0 ? levelZeroSide : levelOneSide,
+              },
+              {
+                title: "Score",
+                value: getBoardWinnerAndScore(currentNode.board)[1],
+              },
+              { title: "Winner", value: currentNode.winner },
+              { title: "Level", value: currentNode.level },
+              { title: "Priority", value: currentNode.priority },
+              {
+                title: "Is Open",
+                value: `${currentNode.isOpenForCalculation}`,
+              },
+              { title: "Is Terminated", value: `${currentNode.isTerminated}` },
+            ]}
+          >
+            <ChessBoard board={currentNode.board} />
+          </Card>
+        </div>
+        <div>
+          {currentNode.parent && (
             <Card
               descriptions={[
                 {
                   title: "Level Side",
                   value:
-                    node.parent.level % 2 === 0 ? levelZeroSide : levelOneSide,
+                    currentNode.parent.level % 2 === 0
+                      ? levelZeroSide
+                      : levelOneSide,
                 },
-                { title: "Score", value: node.parent.score },
-                { title: "Winner", value: node.parent.winner },
-                { title: "Level", value: node.parent.level },
-                { title: "Priority", value: node.parent.priority },
+                { title: "Score", value: currentNode.parent.score },
+                { title: "Winner", value: currentNode.parent.winner },
+                { title: "Level", value: currentNode.parent.level },
+                { title: "Priority", value: currentNode.parent.priority },
                 {
                   title: "Is Open",
-                  value: `${node.parent.isOpenForCalculation}`,
+                  value: `${currentNode.parent.isOpenForCalculation}`,
                 },
                 {
                   title: "Is Terminated",
-                  value: `${node.parent.isTerminated}`,
+                  value: `${currentNode.parent.isTerminated}`,
                 },
               ]}
             >
               <div
-                onClick={() => node.parent && handleClick(node.parent.index)}
+                onClick={() =>
+                  currentNode.parent && handleClick(currentNode.parent.index)
+                }
               >
-                <ChessBoard board={node.parent.board} />
+                <ChessBoard board={currentNode.parent.board} />
               </div>
             </Card>
           )}
