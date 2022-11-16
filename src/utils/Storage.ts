@@ -76,7 +76,7 @@ export const getFileOpenSet = async (
   const primaryNetworkNode = await NetworkNodeTable.findByPk(traceId);
   if (!primaryNetworkNode) {
     await sequelize.close();
-    throw Error();
+    throw Error(`getFileOpenSet: cannot retrieve ${levelZeroSide} ${index}`);
   }
 
   const target = JSON.parse(primaryNetworkNode.content) as NetworkNode;
