@@ -17,7 +17,7 @@ interface IProps {
   toBeMovedBy: Side;
 }
 
-interface State extends Omit<Result, "pointer" | "openSet" | "nextNodes"> {
+interface State extends Omit<Result, "pointer" | "openSet" | "nextNodes" | "levelOneNodes"> {
   pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
