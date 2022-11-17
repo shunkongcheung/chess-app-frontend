@@ -7,11 +7,9 @@ import {
   getMovedBoard,
 } from "../chess";
 
-import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import DbDataStore from "../database/DbDataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
-import { Sequelize } from "sequelize";
 
 interface Args {
   levelZeroBoardHash: string;
@@ -52,7 +50,7 @@ const run = async ({
       ]);
     }
   }
-  await openSetStore.record(runTimes);
+  await openSetStore.record(Math.max(runTimes, oldRunTimes));
   return openSetStore;
 };
 
@@ -133,8 +131,9 @@ const runHelper = async ({
     const childrenBoardNodes = await openSetStore.getNodes(pointer.children);
     const childrenPriorities = childrenBoardNodes.map((node) => node!.priority);
     const newPriority = -Math.max(...childrenPriorities);
+    const isPriorityChanged = pointer.priority !== newPriority;
 
-    if (pointer.priority !== newPriority && !!pointer.parent) {
+    if (isPriorityChanged && pointer.parent >= 0) {
       // if my score has changed, parent needs to re-eveluate, force it to the
       // front such that it would be picked up on next iteration.
       const parent = await openSetStore.getNodeById(pointer.parent);
@@ -149,9 +148,11 @@ const runHelper = async ({
       ]);
     }
 
-    pointer.priority = newPriority;
-    pointer.isTerminated = getIsNodeTerminated(pointer);
-    await openSetStore.update(pointer.index, pointer);
+    if (isPriorityChanged) {
+      // only update if changed, reduce number of change to datastore
+      pointer.priority = newPriority;
+      await openSetStore.update(pointer.index, pointer);
+    }
   }
 
   return { openSetStore };
