@@ -5,9 +5,12 @@ import { run } from "../../simulator";
 import DbDataStore from "../../database/DbDataStore";
 import { Side, Board, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
-import {getCheckInfo} from "../../database/getCheckInfo";
-import {getBoardNodeFromNetworkNode, NetworkNodeTable} from "../../database/NetworkNodeTable";
-import {getSequelize} from "../../database/getSequelize";
+import { getCheckInfo } from "../../database/getCheckInfo";
+import {
+  getBoardNodeFromNetworkNode,
+  NetworkNodeTable,
+} from "../../database/NetworkNodeTable";
+import { getSequelize } from "../../database/getSequelize";
 
 interface Params {
   pageNum: number;
@@ -60,16 +63,27 @@ export default async function handler(
     );
   };
 
+  let pointerId: number = -1;
+  try {
+    const preRunCheckInfo = await getCheckInfo(levelZeroSide, boardHash, 0);
+    pointerId = preRunCheckInfo.highestPriorityNode?.index;
+  } catch {}
+
   const store = await run({
     levelZeroScore: score,
     levelZeroSide,
     levelZeroBoardHash: boardHash,
     runTimes: remainRunTimes,
     onIntervalCallback,
-    sequelize,
   });
 
-  const { recordId } = await getCheckInfo(sequelize, levelZeroSide, boardHash, 0);
+  const hasPrevPointer = pointerId >= 0;
+
+  const { recordId, currentNode: pointerNode } = await getCheckInfo(
+    levelZeroSide,
+    boardHash,
+    hasPrevPointer ? pointerId : 0
+  );
   const query = await NetworkNodeTable.findAll({
     where: { recordId },
     order: [isSorted ? ["priority", "desc"] : ["index", "asc"]],
@@ -83,8 +97,15 @@ export default async function handler(
 
   const timeTaken = Math.round(performance.now() - startTime);
 
-  const pointer = await store.head();
-  const nextNodes = pointer ? await store.getNodes(pointer.children): [];
+  let pointer: BoardNode | undefined = undefined;
+  if (hasPrevPointer) {
+    pointer = {
+      ...pointerNode,
+      parent: pointerNode.parent?.index,
+      children: pointerNode.children.map((node) => node.index),
+    };
+  }
+  const nextNodes = await (pointer ? store.getNodes(pointer.children) : []);
 
   const response: Result = {
     pageNum,
@@ -99,9 +120,7 @@ export default async function handler(
     timeTaken,
   };
 
-  logger(
-    `finished. ${timeTaken}(ms)/${total}(nodes)/${remainRunTimes}(times)`
-  );
+  logger(`finished. ${timeTaken}(ms)/${total}(nodes)/${remainRunTimes}(times)`);
 
   await sequelize.close();
   res.status(200).json(response);
