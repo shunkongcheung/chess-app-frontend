@@ -1,4 +1,4 @@
-import { Sequelize, WhereOptions } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 
 import { BoardNode, Side } from "../types";
 import { getLogFormatter } from "../utils/Logger";
@@ -14,7 +14,6 @@ interface FriendlyNode extends Omit<BoardNode, "children" | "parent"> {
 }
 
 export const getCheckInfo = async (
-  sequelize: Sequelize,
   side: Side,
   boardHash: string,
   index: number
@@ -24,7 +23,6 @@ export const getCheckInfo = async (
   const exportRecord = await ExportRecordTable.findOne({ where });
 
   if (!exportRecord) {
-    await sequelize.close();
     throw Error(logFormatter("no export record"));
   }
   const {
@@ -66,23 +64,23 @@ export const getCheckInfo = async (
 
   const currBoardNode = getBoardNodeFromNetworkNode(currentNetworkNode);
   const parentId = currBoardNode.parent;
-  const [parent, ...children] = await Promise.all([
+  const [parent, children] = await Promise.all([
     parentId
       ? NetworkNodeTable.findOne({ where: { recordId, index: parentId } })
       : null,
-    ...currBoardNode.children.map((childId) =>
-      NetworkNodeTable.findOne({ where: { recordId, index: childId } })
-    ),
+      NetworkNodeTable.findAll({ 
+        where: { recordId, index: { [Op.in]: currBoardNode.children } },
+        order: [
+          ["priority", "desc"],
+          ["level", "asc"],
+        ]
+      })
   ]);
 
   const currentNode: FriendlyNode = {
     ...currBoardNode,
     parent: parent ? getBoardNodeFromNetworkNode(parent) : null,
-    children: children
-      .filter(item => item !== null)
-      .map((childNode) =>getBoardNodeFromNetworkNode(childNode!))
-        
-      
+    children: children.map((childNode) =>getBoardNodeFromNetworkNode(childNode))
   };
 
   return {
