@@ -83,7 +83,7 @@ export default async function handler(
     if (existingData.runTimes <= remainRunTimes) {
       remainRunTimes -= existingData.runTimes;
       openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-      logger(`Starter generated.`);
+      logger(`Generated.`);
     }
   } catch {}
 
@@ -94,8 +94,10 @@ export default async function handler(
       const openSet = store.asArray();
       await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);
     }
-    const currentTime = performance.now() - startTime;
-    logger(`${idx}/${remainRunTimes}. ${currentTime}ms/${store.length}`);
+    const currentTime = Math.round(performance.now() - startTime);
+    logger(
+      `Running. ${idx}/${remainRunTimes}. ${currentTime}(ms)/${store.length}(nodes)`
+    );
   };
 
   const startTime = performance.now();
@@ -106,7 +108,6 @@ export default async function handler(
     runTimes: remainRunTimes,
     onIntervalCallback,
   });
-  const endTime = performance.now();
 
   let resultSet = result.openSet.map(getNetworkNodeFromDataNode);
   if (!isSorted) {
@@ -123,6 +124,7 @@ export default async function handler(
     );
   }
 
+  const timeTaken = Math.round(performance.now() - startTime);
   const response: Result = {
     pageNum,
     pageSize,
@@ -139,16 +141,17 @@ export default async function handler(
     levelOneNodes: resultSet
       .filter((node) => node.level === 1)
       .sort(nodeSorter),
-    timeTaken: Math.round(endTime - startTime),
+    timeTaken,
   };
 
-  const totalTime = performance.now() - startTime;
-  logger(`finished. ${totalTime}ms/${result.openSet.length}/${remainRunTimes}`);
+  logger(
+    `finished. ${timeTaken}(ms)/${result.openSet.length}(nodes)/${remainRunTimes}(times)`
+  );
 
   res.status(200).json(response);
 
   if (isExport) {
     await storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
-    logger("finish storage");
+    logger("stored.");
   }
 }
