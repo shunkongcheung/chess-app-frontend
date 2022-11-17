@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
+import Link from "next/link";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
@@ -6,6 +7,7 @@ import { Board, Side, Node } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
 import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
+import { useRouter } from "next/router";
 
 interface IProps {
   board: Board;
@@ -45,11 +47,6 @@ const MainContent = styled.div`
 `;
 
 const PAGE_SIZE = 50;
-
-const copyHash = (board: Board) => {
-  const text = getHashFromBoard(board);
-  navigator.clipboard.writeText(text);
-};
 
 const fetchData = async (payload: Payload) => {
   const response = await fetch("/api/simulate", {
@@ -115,6 +112,13 @@ const Simulator = ({
   const isPrevPageAvailable = state.pageNum > 1;
   const totalPage = Math.ceil(state.total / PAGE_SIZE);
   const isNextPageAvailable = state.pageNum < totalPage;
+
+  const { query } = useRouter();
+  const getUrl = (board: Board) => {
+    const { side, exportTimes, increment } = query;
+    const shortHash = getHashFromBoard(board);
+    return `/simulate?side=${side}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
+  };
 
   return (
     <MyContainer>
@@ -264,11 +268,11 @@ const Simulator = ({
                   },
                 ]}
               >
-                <div
-                  onClick={() => state.pointer && copyHash(state.pointer.board)}
-                >
-                  <ChessBoard board={state.pointer.board} />
-                </div>
+                <Link href={getUrl(state.pointer.board)}>
+                  <a>
+                    <ChessBoard board={state.pointer.board} />
+                  </a>
+                </Link>
               </Card>
             )}
           </div>
@@ -293,9 +297,11 @@ const Simulator = ({
                   { title: "Is Terminated", value: `${node.isTerminated}` },
                 ]}
               >
-                <div onClick={() => copyHash(node.board)}>
-                  <ChessBoard board={node.board} />
-                </div>
+                <Link href={getUrl(node.board)}>
+                  <a>
+                    <ChessBoard board={node.board} />
+                  </a>
+                </Link>
               </Card>
             );
           })}
@@ -313,9 +319,11 @@ const Simulator = ({
                 { title: "Priority", value: node.priority },
               ]}
             >
-              <div onClick={() => copyHash(board)}>
-                <ChessBoard board={node.board} />
-              </div>
+              <Link href={getUrl(node.board)}>
+                <a>
+                  <ChessBoard board={node.board} />
+                </a>
+              </Link>
             </Card>
           ))}
         />
