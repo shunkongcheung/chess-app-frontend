@@ -76,13 +76,14 @@ export const storeOpenSet = async (
   const networkNodes = nodes.map((node) => getNetworkNodeFromDataNode(node));
 
   let recordId = -1;
+  let existingCount = 0;
   const existingExportRecord = await ExportRecordTable.findOne({
     where: { boardHash, runTimes, side },
   });
 
   if (existingExportRecord) {
     recordId = existingExportRecord.id;
-    await NetworkNodeTable.destroy({ where: { recordId } });
+    existingCount = await NetworkNodeTable.count({ where: { recordId } });
   } else {
     const newExportRecord = await ExportRecordTable.create({
       boardHash,
@@ -92,11 +93,14 @@ export const storeOpenSet = async (
     recordId = newExportRecord.id;
   }
 
-  const tableEntries = networkNodes.map((networkNode) => ({
-    recordId,
-    index: networkNode.index,
-    content: JSON.stringify(networkNode),
-  }));
+  const tableEntries = networkNodes
+    .filter((networkNodes) => networkNodes.index >= existingCount)
+    .map((networkNode) => ({
+      recordId,
+      index: networkNode.index,
+      content: JSON.stringify(networkNode),
+    }));
+
   await NetworkNodeTable.bulkCreate(tableEntries);
   await sequelize.close();
 };
