@@ -7,18 +7,20 @@ import { INITIAL_HASH, PSEUDO_HIGH_PRIORITY } from "../constants";
 
 const Check: NextPage = ({
   levelZeroNode,
-  highestPriority,
+  highestPriorityNode,
   runTimes,
   currentNode,
-  maxReachedLevel,
+  maxReachedNode,
+  total,
 }: any) => {
   return (
     <Checker
-      highestPriority={highestPriority}
+      highestPriorityNode={highestPriorityNode}
       currentNode={currentNode}
       levelZeroNode={levelZeroNode}
-      maxReachedLevel={maxReachedLevel}
+      maxReachedNode={maxReachedNode}
       runTimes={runTimes}
+      total={total}
     />
   );
 };
@@ -48,18 +50,19 @@ export const getServerSideProps = async ({
     shortHash as string
   );
 
-  const maxReachedLevel = networkNodes.reduce(
-    (prev, curr) => Math.max(prev, curr.level),
-    0
+  const maxReachedNode = networkNodes.reduce(
+    (prev, curr) => (prev.level > curr.level ? prev : curr),
+    networkNodes[0]
   );
+  const total = networkNodes.length;
 
-  const highestPriority = networkNodes.reduce(
-    (prev, curr) =>
-      curr.priority === PSEUDO_HIGH_PRIORITY
-        ? prev
-        : Math.max(prev, curr.priority),
-    -PSEUDO_HIGH_PRIORITY
-  );
+  const highestPriorityNode = networkNodes.reduce((prev, curr) => {
+    if (curr.priority === PSEUDO_HIGH_PRIORITY) return prev;
+    if (curr.priority > prev.priority) {
+      return curr;
+    }
+    return prev;
+  }, networkNodes[networkNodes.length - 1]);
 
   const currentNetworkNode = networkNodes.find((item) => item.index === fIndex);
   if (!currentNetworkNode) {
@@ -81,10 +84,11 @@ export const getServerSideProps = async ({
   return {
     props: {
       currentNode,
-      maxReachedLevel,
+      maxReachedNode,
       runTimes,
       levelZeroNode,
-      highestPriority,
+      highestPriorityNode,
+      total,
     },
   };
 };

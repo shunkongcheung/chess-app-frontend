@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 import styled from "styled-components";
 
@@ -11,9 +12,10 @@ import { nodeSorter } from "../simulator";
 interface IProps {
   currentNode: Node;
   levelZeroNode: Node;
-  highestPriority: number;
-  maxReachedLevel: number;
+  highestPriorityNode: Node;
+  maxReachedNode: Node;
   runTimes: number;
+  total: number;
 }
 
 const MainContent = styled.div`
@@ -25,20 +27,19 @@ const MainContent = styled.div`
 
 const Checker = ({
   currentNode,
-  highestPriority,
+  highestPriorityNode,
   levelZeroNode,
-  maxReachedLevel,
+  maxReachedNode,
   runTimes,
+  total,
 }: IProps) => {
-  const { query, push } = useRouter();
+  const { query } = useRouter();
   const { side: levelZeroSide } = query;
   const [state, setState] = useState({ isSorted: true });
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
 
-  const handleClick = (nodeIndex: number) => {
-    push(
-      `/check?side=${query.side}&shortHash=${query.shortHash}&index=${nodeIndex}`
-    );
+  const getUrl = (nodeIndex: number) => {
+    return `/check?side=${query.side}&shortHash=${query.shortHash}&index=${nodeIndex}`;
   };
 
   const filteredChildren = state.isSorted
@@ -68,10 +69,25 @@ const Checker = ({
                 value: `${levelZeroNode.isTerminated}`,
               },
               { title: "--------", value: "" },
-              { title: "Max. Level Reached", value: `${maxReachedLevel}` },
+              {
+                title: "Max. Level Reached",
+                value: (
+                  <Link href={getUrl(maxReachedNode.index)}>
+                    <a>{maxReachedNode.level}</a>
+                  </Link>
+                ),
+              },
+              { title: "Total", value: `${total}` },
               { title: "--------", value: "" },
               { title: "Run Times", value: `${runTimes}` },
-              { title: "Highest Priority", value: `${highestPriority}` },
+              {
+                title: "Highest Priority",
+                value: (
+                  <Link href={getUrl(highestPriorityNode.index)}>
+                    <a>{highestPriorityNode.priority}</a>
+                  </Link>
+                ),
+              },
               {
                 title: "",
                 value: (
@@ -109,6 +125,7 @@ const Checker = ({
                 value: `${currentNode.isOpenForCalculation}`,
               },
               { title: "Is Terminated", value: `${currentNode.isTerminated}` },
+              { title: "Child count", value: `${currentNode.children.length}` },
             ]}
           >
             <ChessBoard board={currentNode.board} />
@@ -139,13 +156,11 @@ const Checker = ({
                 },
               ]}
             >
-              <div
-                onClick={() =>
-                  currentNode.parent && handleClick(currentNode.parent.index)
-                }
-              >
-                <ChessBoard board={currentNode.parent.board} />
-              </div>
+              <Link href={getUrl(currentNode.parent.index)}>
+                <a>
+                  <ChessBoard board={currentNode.parent.board} />
+                </a>
+              </Link>
             </Card>
           )}
         </div>
@@ -159,7 +174,7 @@ const Checker = ({
 
             return (
               <Card
-                key={getHashFromBoard(node.board)}
+                key={node.index}
                 descriptions={[
                   { title: "Level Side", value: selectedSide },
                   { title: "Score", value: node.score },
@@ -170,9 +185,11 @@ const Checker = ({
                   { title: "Is Terminated", value: `${node.isTerminated}` },
                 ]}
               >
-                <div onClick={() => handleClick(node.index)}>
-                  <ChessBoard board={node.board} />
-                </div>
+                <Link href={getUrl(node.index)}>
+                  <a>
+                    <ChessBoard board={node.board} />
+                  </a>
+                </Link>
               </Card>
             );
           }),
