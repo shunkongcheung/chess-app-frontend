@@ -91,7 +91,9 @@ export const initialize = (sequelize: Sequelize) => {
   );
 };
 
-export const getBoardNodeFromNetworkNode = (networkNode: NetworkNodeTable): BoardNode => {
+export const getBoardNodeFromNetworkNode = (
+  networkNode: NetworkNodeTable
+): BoardNode => {
   return {
     boardHash: networkNode.boardHash,
     index: networkNode.index,
@@ -103,6 +105,5 @@ export const getBoardNodeFromNetworkNode = (networkNode: NetworkNodeTable): Boar
     isTerminated: networkNode.isTerminated,
     relatives: JSON.parse(networkNode.relatives) as Array<number>,
     children: JSON.parse(networkNode.children) as Array<number>,
-  }
-}
-
+  };
+};

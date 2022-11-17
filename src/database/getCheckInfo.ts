@@ -4,13 +4,16 @@ import { BoardNode, Side } from "../types";
 import { getLogFormatter } from "../utils/Logger";
 
 import { ExportRecordTable } from "./ExportRecordTable";
-import { getBoardNodeFromNetworkNode, NetworkNodeTable } from "./NetworkNodeTable";
+import {
+  getBoardNodeFromNetworkNode,
+  NetworkNodeTable,
+} from "./NetworkNodeTable";
 
 const logFormatter = getLogFormatter("getCheckInfo");
 
 interface FriendlyNode extends Omit<BoardNode, "children" | "parent"> {
   parent: BoardNode | null;
-  children: Array<BoardNode>
+  children: Array<BoardNode>;
 }
 
 export const getCheckInfo = async (
@@ -18,7 +21,6 @@ export const getCheckInfo = async (
   boardHash: string,
   index: number
 ) => {
-
   const where: WhereOptions = { boardHash, side };
   const exportRecord = await ExportRecordTable.findOne({ where });
 
@@ -68,19 +70,21 @@ export const getCheckInfo = async (
     parentId
       ? NetworkNodeTable.findOne({ where: { recordId, index: parentId } })
       : null,
-      NetworkNodeTable.findAll({ 
-        where: { recordId, index: { [Op.in]: currBoardNode.children } },
-        order: [
-          ["priority", "desc"],
-          ["level", "asc"],
-        ]
-      })
+    NetworkNodeTable.findAll({
+      where: { recordId, index: { [Op.in]: currBoardNode.children } },
+      order: [
+        ["priority", "desc"],
+        ["level", "asc"],
+      ],
+    }),
   ]);
 
   const currentNode: FriendlyNode = {
     ...currBoardNode,
     parent: parent ? getBoardNodeFromNetworkNode(parent) : null,
-    children: children.map((childNode) =>getBoardNodeFromNetworkNode(childNode))
+    children: children.map((childNode) =>
+      getBoardNodeFromNetworkNode(childNode)
+    ),
   };
 
   return {

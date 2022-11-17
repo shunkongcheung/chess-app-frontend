@@ -11,7 +11,7 @@ import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import DbDataStore from "../database/DbDataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
-import {Sequelize} from "sequelize";
+import { Sequelize } from "sequelize";
 
 interface Args {
   levelZeroBoardHash: string;
@@ -19,10 +19,7 @@ interface Args {
   levelZeroSide: Side;
   runTimes: number;
   callbackInterval?: number;
-  onIntervalCallback?: (
-    runIdx: number,
-    dataStore: DbDataStore,
-  ) => any;
+  onIntervalCallback?: (runIdx: number, dataStore: DbDataStore) => any;
 }
 
 interface InternalArgs {
@@ -30,7 +27,6 @@ interface InternalArgs {
   levelZeroSide: Side;
   openSetStore: DbDataStore;
 }
-
 
 const run = async ({
   callbackInterval = 1000,
@@ -41,7 +37,10 @@ const run = async ({
   runTimes,
 }: Args) => {
   const openSetStore = new DbDataStore();
-  const oldRunTimes = await openSetStore.initalize(levelZeroBoardHash, levelZeroSide);
+  const oldRunTimes = await openSetStore.initalize(
+    levelZeroBoardHash,
+    levelZeroSide
+  );
 
   for (let idx = oldRunTimes; idx < runTimes; idx++) {
     await runHelper({ levelZeroSide, levelZeroScore, openSetStore });
@@ -49,11 +48,11 @@ const run = async ({
     if (onIntervalCallback && idx % callbackInterval === 0) {
       await Promise.all([
         onIntervalCallback(idx, openSetStore),
-        openSetStore.record(idx)
-      ]); 
+        openSetStore.record(idx),
+      ]);
     }
   }
-  await openSetStore.record(runTimes); 
+  await openSetStore.record(runTimes);
   return openSetStore;
 };
 
@@ -77,14 +76,15 @@ const runHelper = async ({
   if (!pointer.children.length) {
     const board = getBoardFromHash(pointer.boardHash);
     const nextMoves = getAllNextPositions(board, isPointerSideTop);
-    const nextBoards = nextMoves.map(({ from, to }) => getMovedBoard(board, from, to));
+    const nextBoards = nextMoves.map(({ from, to }) =>
+      getMovedBoard(board, from, to)
+    );
 
     const level = pointer.level + 1;
     const setLength = await openSetStore.count();
 
     nextNodes = [];
-    const potentialNextNodes = nextBoards
-    .map((board) => {
+    const potentialNextNodes = nextBoards.map((board) => {
       const [winner, score] = getBoardWinnerAndScore(board);
       const node: BoardNode = {
         boardHash: getHashFromBoard(board),
@@ -105,17 +105,16 @@ const runHelper = async ({
         isOpenForCalculation: true,
       };
       return node;
-    })
+    });
 
     let newNodeCount = 0;
-    for(let idx = 0; idx < potentialNextNodes.length; idx ++){
-      const potentialNode = potentialNextNodes[idx]
+    for (let idx = 0; idx < potentialNextNodes.length; idx++) {
+      const potentialNode = potentialNextNodes[idx];
       const existingNode = await openSetStore.getNode(potentialNode);
       if (existingNode) {
         existingNode.relatives.push(pointer.index);
         nextNodes.push(existingNode.index);
-      }
-      else {
+      } else {
         potentialNode.index = setLength + newNodeCount;
         newNodeCount += 1;
         await openSetStore.insert(potentialNode);
@@ -131,7 +130,7 @@ const runHelper = async ({
     pointer.isTerminated = true;
   }
   if (pointer.children.length) {
-    const childrenBoardNodes = await openSetStore.getNodes(pointer.children)
+    const childrenBoardNodes = await openSetStore.getNodes(pointer.children);
     const childrenPriorities = childrenBoardNodes.map((node) => node!.priority);
     const newPriority = -Math.max(...childrenPriorities);
 
@@ -144,8 +143,9 @@ const runHelper = async ({
 
       await Promise.all([
         openSetStore.update(pointer.parent, parent),
-        ...pointer.relatives.map(
-          async(relative) => openSetStore.update(relative, { isOpenForCalculation: true }))
+        ...pointer.relatives.map(async (relative) =>
+          openSetStore.update(relative, { isOpenForCalculation: true })
+        ),
       ]);
     }
 

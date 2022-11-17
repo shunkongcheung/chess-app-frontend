@@ -4,7 +4,7 @@ import { getCheckInfo } from "../database/getCheckInfo";
 
 import Checker from "../containers/Checker";
 import { INITIAL_HASH } from "../constants";
-import {getSequelize} from "../database/getSequelize";
+import { getSequelize } from "../database/getSequelize";
 
 const Check: NextPage = ({
   levelZeroNode,
