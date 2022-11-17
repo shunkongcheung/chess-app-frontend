@@ -1,25 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
-import { nodeSorter, run } from "../../simulator";
-import DataStore from "../../simulator/DataStore";
-import { Side, Board, Node } from "../../types";
+import { run } from "../../simulator";
+import DbDataStore from "../../database/DbDataStore";
+import { Side, Board, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
-import {
-  NetworkNode,
-  getNetworkNodeFromDataNode,
-  getOpenSetFromNetworkOpenSet,
-} from "../../utils/NetworkNode";
-
-import { getOpenSetNetworkNodes } from "../../database/getOpenSetNetworkNodes";
-import { storeOpenSet } from "../../database/storeOpenSet";
+import {getCheckInfo} from "../../database/getCheckInfo";
+import {getBoardNodeFromNetworkNode, NetworkNodeTable} from "../../database/NetworkNodeTable";
+import {getSequelize} from "../../database/getSequelize";
 
 interface Params {
   pageNum: number;
   pageSize: number;
   isSorted: boolean;
   isOpenOnly: boolean;
-  isExport: boolean;
   runTimes: number;
 }
 
@@ -31,10 +25,9 @@ export interface Payload extends Partial<Params> {
 export interface Result extends Params {
   total: number;
   timeTaken: number;
-  pointer?: NetworkNode;
-  openSet: Array<NetworkNode>;
-  levelOneNodes: Array<NetworkNode>;
-  nextNodes: Array<NetworkNode>;
+  pointer?: BoardNode;
+  openSet: Array<BoardNode>;
+  nextNodes: Array<BoardNode>;
 }
 
 const logger = getLogger("/api/simulate");
@@ -49,110 +42,67 @@ export default async function handler(
     pageSize = 50,
     isSorted = false,
     isOpenOnly = false,
-    isExport = false,
     runTimes = DEFAULT_RUN_TIMES,
     levelZeroSide,
     board,
   } = payload;
   const startTime = performance.now();
-  const [winner, score] = getBoardWinnerAndScore(board);
-  let openSet: Array<Node> = [
-    {
-      index: 0,
-      board,
-      level: 0,
-      score,
-      winner,
-      isTerminated: false,
-      priority: 0,
-      relatives: [],
-      children: [],
-      isOpenForCalculation: true,
-    },
-  ];
-
+  const sequelize = await getSequelize();
+  const [_, score] = getBoardWinnerAndScore(board);
   const boardHash = getHashFromBoard(board);
   let remainRunTimes = runTimes;
-  try {
-    const existingData = await getOpenSetNetworkNodes(
-      levelZeroSide,
-      boardHash,
-      remainRunTimes
-    );
-    logger(`Exists. ${existingData.runTimes}/${remainRunTimes}`);
 
-    if (existingData.runTimes <= remainRunTimes) {
-      remainRunTimes -= existingData.runTimes;
-      openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-      const currentTime = Math.round(performance.now() - startTime);
-      logger(`Generated. ${currentTime}`);
-    }
-  } catch {}
-
-  const levelZeroNode = openSet.find((item) => item.level === 0)!;
-
-  const onIntervalCallback = async (idx: number, store: DataStore<Node>) => {
-    if (isExport) {
-      const openSet = store.asArray();
-      await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);
-    }
+  const onIntervalCallback = async (idx: number, store: DbDataStore) => {
     const currentTime = Math.round(performance.now() - startTime);
+    const count = await store.count();
     logger(
-      `Running. ${idx}/${remainRunTimes}. ${currentTime}(ms)/${store.length}(nodes)`
+      `Running. ${idx}/${remainRunTimes}. ${currentTime}(ms)/${count}(nodes)`
     );
   };
 
-  let result = await run({
-    levelZeroScore: levelZeroNode.score,
+  const store = await run({
+    levelZeroScore: score,
     levelZeroSide,
-    openSet,
+    levelZeroBoardHash: boardHash,
     runTimes: remainRunTimes,
     onIntervalCallback,
+    sequelize,
   });
 
-  let resultSet = result.openSet.map(getNetworkNodeFromDataNode);
-  if (!isSorted) {
-    resultSet.sort((a, b) => {
-      if (a.index < b.index) return -1;
-      if (a.index > b.index) return 1;
-      return 0;
-    });
-  }
+  const { recordId } = await getCheckInfo(sequelize, levelZeroSide, boardHash, 0);
+  const query = await NetworkNodeTable.findAll({
+    where: { recordId },
+    order: [isSorted ? ["priority", "desc"] : ["index", "asc"]],
+    offset: (pageNum - 1) * pageSize,
+    limit: pageSize,
+  });
 
-  if (isOpenOnly) {
-    resultSet = resultSet.filter(
-      (item) => item.isOpenForCalculation && !item.isTerminated
-    );
-  }
+  const total = await NetworkNodeTable.count({
+    where: { recordId },
+  });
 
   const timeTaken = Math.round(performance.now() - startTime);
+
+  const pointer = await store.head();
+  const nextNodes = pointer ? await store.getNodes(pointer.children): [];
+
   const response: Result = {
     pageNum,
     pageSize,
     isSorted,
     isOpenOnly,
-    isExport,
     runTimes,
-    total: result.openSet.length,
-    pointer: result.pointer
-      ? getNetworkNodeFromDataNode(result.pointer)
-      : undefined,
-    openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
-    nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
-    levelOneNodes: resultSet
-      .filter((node) => node.level === 1)
-      .sort(nodeSorter),
+    total,
+    pointer,
+    openSet: query.map(getBoardNodeFromNetworkNode),
+    nextNodes,
     timeTaken,
   };
 
   logger(
-    `finished. ${timeTaken}(ms)/${result.openSet.length}(nodes)/${remainRunTimes}(times)`
+    `finished. ${timeTaken}(ms)/${total}(nodes)/${remainRunTimes}(times)`
   );
 
+  await sequelize.close();
   res.status(200).json(response);
-
-  if (isExport) {
-    await storeOpenSet(levelZeroSide, boardHash, result.openSet, runTimes);
-    logger("stored.");
-  }
 }

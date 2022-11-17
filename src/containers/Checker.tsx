@@ -4,16 +4,22 @@ import Link from "next/link";
 
 import styled from "styled-components";
 
-import { Node, Side } from "../types";
+import { BoardNode, Side } from "../types";
 import { Container, Card, ChessBoard, ScrollList } from "../components";
-import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import { getBoardFromHash, getBoardWinnerAndScore } from "../chess";
 import { nodeSorter } from "../simulator";
 
+
+interface FriendlyNode extends Omit<BoardNode, "children" | "parent"> {
+  parent: BoardNode | null;
+  children: Array<BoardNode>
+}
+
 interface IProps {
-  currentNode: Node;
-  levelZeroNode: Node;
-  highestPriorityNode: Node;
-  maxReachedNode: Node;
+  currentNode: FriendlyNode;
+  levelZeroNode: FriendlyNode;
+  highestPriorityNode: FriendlyNode;
+  maxReachedNode: FriendlyNode;
   runTimes: number;
   total: number;
 }
@@ -50,6 +56,8 @@ const Checker = ({
         return 0;
       });
 
+      const levelZeroBoard = getBoardFromHash(levelZeroNode.boardHash);
+      const currentNodeBoard = getBoardFromHash(currentNode.boardHash);
   return (
     <Container>
       <MainContent>
@@ -58,7 +66,7 @@ const Checker = ({
             descriptions={[
               {
                 title: "Score",
-                value: getBoardWinnerAndScore(levelZeroNode.board)[1],
+                value: getBoardWinnerAndScore(levelZeroBoard)[1],
               },
               {
                 title: "Is Open",
@@ -102,7 +110,7 @@ const Checker = ({
               },
             ]}
           >
-            <ChessBoard board={levelZeroNode.board} />
+            <ChessBoard board={levelZeroBoard} />
           </Card>
         </div>
         <div>
@@ -115,7 +123,7 @@ const Checker = ({
               },
               {
                 title: "Score",
-                value: getBoardWinnerAndScore(currentNode.board)[1],
+                value: getBoardWinnerAndScore(currentNodeBoard)[1],
               },
               { title: "Winner", value: currentNode.winner },
               { title: "Level", value: currentNode.level },
@@ -128,7 +136,7 @@ const Checker = ({
               { title: "Child count", value: `${currentNode.children.length}` },
             ]}
           >
-            <ChessBoard board={currentNode.board} />
+            <ChessBoard board={currentNodeBoard} />
           </Card>
         </div>
         <div>
@@ -158,7 +166,7 @@ const Checker = ({
             >
               <Link href={getUrl(currentNode.parent.index)}>
                 <a>
-                  <ChessBoard board={currentNode.parent.board} />
+                  <ChessBoard board={getBoardFromHash(currentNode.parent.boardHash)} />
                 </a>
               </Link>
             </Card>
@@ -187,7 +195,7 @@ const Checker = ({
               >
                 <Link href={getUrl(node.index)}>
                   <a>
-                    <ChessBoard board={node.board} />
+                    <ChessBoard board={getBoardFromHash(node.boardHash)} />
                   </a>
                 </Link>
               </Card>

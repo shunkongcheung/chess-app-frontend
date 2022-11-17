@@ -1,21 +1,24 @@
-import { WhereOptions } from "sequelize";
+import { Sequelize, WhereOptions } from "sequelize";
 
-import { Side } from "../types";
-import { NetworkNode } from "../utils/NetworkNode";
+import { BoardNode, Side } from "../types";
 import { getLogFormatter } from "../utils/Logger";
 
-import { getSequelize } from "./getSequelize";
 import { ExportRecordTable } from "./ExportRecordTable";
-import { NetworkNodeTable } from "./NetworkNodeTable";
+import { getBoardNodeFromNetworkNode, NetworkNodeTable } from "./NetworkNodeTable";
 
 const logFormatter = getLogFormatter("getCheckInfo");
 
+interface FriendlyNode extends Omit<BoardNode, "children" | "parent"> {
+  parent: BoardNode | null;
+  children: Array<BoardNode>
+}
+
 export const getCheckInfo = async (
+  sequelize: Sequelize,
   side: Side,
   boardHash: string,
   index: number
 ) => {
-  const sequelize = await getSequelize();
 
   const where: WhereOptions = { boardHash, side };
   const exportRecord = await ExportRecordTable.findOne({ where });
@@ -47,53 +50,48 @@ export const getCheckInfo = async (
   ]);
 
   if (!currentNetworkNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no index ${index}`));
   }
   if (!levelZeroNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no levelZeroNode`));
   }
   if (!highestPriorityNode) {
-    await sequelize.close();
     throw Error(
       logFormatter(`no highestPriorityNode ${highestPriorityNodeIndex}`)
     );
   }
   if (!maxReachedNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no maxReachedNode ${maxReachedNodeIndex}`));
   }
 
-  const currentNodeContent = JSON.parse(
-    currentNetworkNode.content
-  ) as NetworkNode;
-  const parentId = currentNodeContent.parent;
+  const currBoardNode = getBoardNodeFromNetworkNode(currentNetworkNode);
+  const parentId = currBoardNode.parent;
   const [parent, ...children] = await Promise.all([
     parentId
       ? NetworkNodeTable.findOne({ where: { recordId, index: parentId } })
       : null,
-    ...currentNodeContent.children.map((childId) =>
+    ...currBoardNode.children.map((childId) =>
       NetworkNodeTable.findOne({ where: { recordId, index: childId } })
     ),
   ]);
 
-  const currentNode = {
-    ...currentNodeContent,
-    parent: parent ? (JSON.parse(parent.content) as NetworkNode) : null,
+  const currentNode: FriendlyNode = {
+    ...currBoardNode,
+    parent: parent ? getBoardNodeFromNetworkNode(parent) : null,
     children: children
-      .map((childNode) =>
-        childNode ? (JSON.parse(childNode.content) as NetworkNode) : null
-      )
-      .filter((item) => !!item),
+      .filter(item => item !== null)
+      .map((childNode) =>getBoardNodeFromNetworkNode(childNode!))
+        
+      
   };
 
   return {
+    recordId,
     runTimes: exportRecord.runTimes,
     total: exportRecord.total,
     currentNode,
-    levelZeroNode: JSON.parse(levelZeroNode.content) as NetworkNode,
-    highestPriorityNode: JSON.parse(highestPriorityNode.content) as NetworkNode,
-    maxReachedNode: JSON.parse(maxReachedNode.content) as NetworkNode,
+    levelZeroNode: getBoardNodeFromNetworkNode(levelZeroNode),
+    highestPriorityNode: getBoardNodeFromNetworkNode(highestPriorityNode),
+    maxReachedNode: getBoardNodeFromNetworkNode(maxReachedNode),
   };
 };

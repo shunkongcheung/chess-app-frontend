@@ -24,8 +24,8 @@ export interface Move {
   to: Position;
 }
 
-export interface Node {
-  board: Board;
+export interface BoardNode {
+  boardHash: string;
   // order that the node is inserted
   index: number;
   // level 0: start board
@@ -43,9 +43,9 @@ export interface Node {
   // whether termination condition is reached
   isTerminated: boolean;
   // connection nodes: the one that generate current node
-  parent?: Node;
+  parent?: number;
   // connection nodes: not the one generate current node, but can also generate current node
-  relatives: Array<Node>;
+  relatives: Array<number>;
   // connection nodes
-  children: Array<Node>;
+  children: Array<number>;
 }

@@ -2,8 +2,8 @@ import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
 
-import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
-import { Board, Side, Node } from "../types";
+import { getBoardFromHash, getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import { Board, Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
 import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
@@ -14,13 +14,6 @@ interface IProps {
   exportTimes: number;
   increment: number;
   toBeMovedBy: Side;
-}
-
-interface State
-  extends Omit<Result, "pointer" | "nextNodes" | "levelOneNodes" | "openSet"> {
-  pointer?: Node;
-  openSet: Array<Node>;
-  nextNodes: Array<Node>; // debug only
 }
 
 const MyContainer = styled(Container)`
@@ -63,7 +56,7 @@ const Simulator = ({
   exportTimes,
   toBeMovedBy: levelZeroSide,
 }: IProps) => {
-  const [state, setState] = useState<State>({
+  const [state, setState] = useState<Result>({
     openSet: [],
     nextNodes: [],
     runTimes: 0,
@@ -71,7 +64,6 @@ const Simulator = ({
     timeTaken: 0,
     pageNum: 1,
     pageSize: 1,
-    isExport: false,
     isOpenOnly: false,
     isSorted: false,
   });
@@ -82,7 +74,6 @@ const Simulator = ({
       isOpenOnly: boolean,
       isSorted: boolean,
       runTimes: number,
-      isExport = false
     ) => {
       const response = await fetchData({
         pageNum,
@@ -91,18 +82,8 @@ const Simulator = ({
         board,
         levelZeroSide,
         runTimes,
-        isExport,
       });
-      const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
-      setState((oldState) => ({
-        ...oldState,
-        ...response,
-        pointer: response.pointer
-          ? (response.pointer as unknown as Node)
-          : undefined,
-        openSet: newOpenSet,
-        nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
-      }));
+      setState(response);
     },
     [levelZeroSide, board]
   );
@@ -119,6 +100,8 @@ const Simulator = ({
     const shortHash = getHashFromBoard(board);
     return `/simulate?side=${side}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
   };
+
+  const pointerBoard = state.pointer ? getBoardFromHash(state.pointer.boardHash): [[]];
 
   return (
     <MyContainer>
@@ -213,7 +196,7 @@ const Simulator = ({
                   title: (
                     <button
                       onClick={async () =>
-                        await handleClick(1, false, false, exportTimes, true)
+                        await handleClick(1, false, false, exportTimes)
                       }
                     >
                       export
@@ -268,9 +251,9 @@ const Simulator = ({
                   },
                 ]}
               >
-                <Link href={getUrl(state.pointer.board)}>
+                <Link href={getUrl(pointerBoard)}>
                   <a>
-                    <ChessBoard board={state.pointer.board} />
+                    <ChessBoard board={pointerBoard} />
                   </a>
                 </Link>
               </Card>
@@ -282,6 +265,7 @@ const Simulator = ({
           listItems={state.openSet.map((node) => {
             const selectedSide =
               node.level % 2 === 0 ? levelZeroSide : levelOneSide;
+            const nodeBoard = getBoardFromHash(node.boardHash);
 
             return (
               <Card
@@ -297,9 +281,9 @@ const Simulator = ({
                   { title: "Is Terminated", value: `${node.isTerminated}` },
                 ]}
               >
-                <Link href={getUrl(node.board)}>
+                <Link href={getUrl(nodeBoard)}>
                   <a>
-                    <ChessBoard board={node.board} />
+                    <ChessBoard board={nodeBoard} />
                   </a>
                 </Link>
               </Card>
@@ -310,7 +294,9 @@ const Simulator = ({
       <SecondaryContainer>
         <ScrollList
           columns={1}
-          listItems={(state.nextNodes || []).map((node, index) => (
+          listItems={(state.nextNodes || []).map((node, index) => {
+            const nodeBoard = getBoardFromHash(node.boardHash);
+            return (
             <Card
               key={`NextNode-${index}`}
               descriptions={[
@@ -319,13 +305,14 @@ const Simulator = ({
                 { title: "Priority", value: node.priority },
               ]}
             >
-              <Link href={getUrl(node.board)}>
+              <Link href={getUrl(nodeBoard)}>
                 <a>
-                  <ChessBoard board={node.board} />
+                  <ChessBoard board={nodeBoard} />
                 </a>
               </Link>
             </Card>
-          ))}
+          )
+          })}
         />
       </SecondaryContainer>
     </MyContainer>
