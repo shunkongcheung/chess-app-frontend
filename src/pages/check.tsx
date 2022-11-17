@@ -4,6 +4,7 @@ import { getCheckInfo } from "../database/getCheckInfo";
 
 import Checker from "../containers/Checker";
 import { INITIAL_HASH } from "../constants";
+import {getSequelize} from "../database/getSequelize";
 
 const Check: NextPage = ({
   levelZeroNode,
@@ -45,6 +46,7 @@ export const getServerSideProps = async ({
     };
   }
 
+  const sequelize = await getSequelize();
   const {
     currentNode,
     levelZeroNode,
@@ -53,6 +55,7 @@ export const getServerSideProps = async ({
     highestPriorityNode,
     total,
   } = await getCheckInfo(fSide, fShortHash, fIndex);
+  await sequelize.close();
 
   return {
     props: {
