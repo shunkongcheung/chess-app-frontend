@@ -23,7 +23,6 @@ interface Args {
     runIdx: number,
     dataStore: DbDataStore,
   ) => any;
-  sequelize: Sequelize
 }
 
 interface InternalArgs {
@@ -40,10 +39,10 @@ const run = async ({
   levelZeroScore,
   levelZeroSide,
   runTimes,
-  sequelize,
 }: Args) => {
   const openSetStore = new DbDataStore();
-  const oldRunTimes = await openSetStore.initalize(levelZeroBoardHash, levelZeroSide, sequelize);
+  const oldRunTimes = await openSetStore.initalize(levelZeroBoardHash, levelZeroSide);
+
   for (let idx = oldRunTimes; idx < runTimes; idx++) {
     await runHelper({ levelZeroSide, levelZeroScore, openSetStore });
 
@@ -54,7 +53,7 @@ const run = async ({
       ]); 
     }
   }
-  await openSetStore.record(oldRunTimes + runTimes); 
+  await openSetStore.record(runTimes); 
   return openSetStore;
 };
 
@@ -108,13 +107,10 @@ const runHelper = async ({
       return node;
     })
 
-    console.log("here 1", pointer.boardHash, potentialNextNodes.length);
-
     let newNodeCount = 0;
     for(let idx = 0; idx < potentialNextNodes.length; idx ++){
       const potentialNode = potentialNextNodes[idx]
       const existingNode = await openSetStore.getNode(potentialNode);
-      console.log("here 2", idx, !!existingNode);
       if (existingNode) {
         existingNode.relatives.push(pointer.index);
         nextNodes.push(existingNode.index);
