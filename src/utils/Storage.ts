@@ -4,7 +4,7 @@ import getConfig from "next/config";
 
 import { Node, Side } from "../types";
 import { NetworkNode, getNetworkNodeFromDataNode } from "./NetworkNode";
-import {getHashFromBoard} from "../chess";
+import { getHashFromBoard } from "../chess";
 
 class ExportRecordTable extends Model {
   declare id: number;
