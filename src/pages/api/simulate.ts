@@ -101,7 +101,7 @@ export default async function handler(
   if (hasPrevPointer) {
     pointer = {
       ...pointerNode,
-      parent: pointerNode.parent?.index,
+      parent: pointerNode.parent?.index || -1,
       children: pointerNode.children.map((node) => node.index),
     };
   }
