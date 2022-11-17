@@ -1,6 +1,6 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
 import { Side } from "../types";
-import { getCheckInfo } from "../utils/Storage";
+import { getCheckInfo } from "../database/getCheckInfo";
 
 import Checker from "../containers/Checker";
 import { INITIAL_HASH } from "../constants";

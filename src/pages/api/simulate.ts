@@ -11,7 +11,8 @@ import {
   getOpenSetFromNetworkOpenSet,
 } from "../../utils/NetworkNode";
 
-import { getOpenSetNetworkNodes, storeOpenSet } from "../../utils/Storage";
+import { getOpenSetNetworkNodes } from "../../database/getOpenSetNetworkNodes";
+import { storeOpenSet } from "../../database/storeOpenSet";
 
 interface Params {
   pageNum: number;
