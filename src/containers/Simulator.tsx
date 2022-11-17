@@ -2,7 +2,11 @@ import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
 
-import { getBoardFromHash, getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import {
+  getBoardFromHash,
+  getBoardWinnerAndScore,
+  getHashFromBoard,
+} from "../chess";
 import { Board, Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
@@ -73,7 +77,7 @@ const Simulator = ({
       pageNum: number,
       isOpenOnly: boolean,
       isSorted: boolean,
-      runTimes: number,
+      runTimes: number
     ) => {
       const response = await fetchData({
         pageNum,
@@ -101,7 +105,9 @@ const Simulator = ({
     return `/simulate?side=${side}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
   };
 
-  const pointerBoard = state.pointer ? getBoardFromHash(state.pointer.boardHash): [[]];
+  const pointerBoard = state.pointer
+    ? getBoardFromHash(state.pointer.boardHash)
+    : [[]];
 
   return (
     <MyContainer>
@@ -113,7 +119,7 @@ const Simulator = ({
                 { title: "Level side", value: levelZeroSide },
                 { title: "Score", value: getBoardWinnerAndScore(board)[1] },
                 { title: "#", value: state.runTimes },
-                { title: "Time", value: state.timeTaken },
+                { title: "Time", value: `${state.timeTaken} ms` },
                 { title: "Count", value: state.total },
                 { title: "Page", value: `${state.pageNum}/${totalPage}` },
                 {
@@ -297,21 +303,21 @@ const Simulator = ({
           listItems={(state.nextNodes || []).map((node, index) => {
             const nodeBoard = getBoardFromHash(node.boardHash);
             return (
-            <Card
-              key={`NextNode-${index}`}
-              descriptions={[
-                { title: "Level", value: node.level },
-                { title: "Score", value: node.score },
-                { title: "Priority", value: node.priority },
-              ]}
-            >
-              <Link href={getUrl(nodeBoard)}>
-                <a>
-                  <ChessBoard board={nodeBoard} />
-                </a>
-              </Link>
-            </Card>
-          )
+              <Card
+                key={`NextNode-${index}`}
+                descriptions={[
+                  { title: "Level", value: node.level },
+                  { title: "Score", value: node.score },
+                  { title: "Priority", value: node.priority },
+                ]}
+              >
+                <Link href={getUrl(nodeBoard)}>
+                  <a>
+                    <ChessBoard board={nodeBoard} />
+                  </a>
+                </Link>
+              </Card>
+            );
           })}
         />
       </SecondaryContainer>
