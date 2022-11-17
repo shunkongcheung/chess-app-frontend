@@ -24,7 +24,7 @@ export class NetworkNodeTable extends Model {
   // whether termination condition is reached
   declare isTerminated: boolean;
   // connection nodes: the one that generate current node
-  declare parent?: number;
+  declare parent: number;
   // connection nodes: not the one generate current node, but can also generate current node
   declare relatives: string;
   // connection nodes
@@ -76,7 +76,7 @@ export const initialize = (sequelize: Sequelize) => {
       },
       parent: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
       },
       relatives: {
         type: DataTypes.TEXT,
@@ -99,6 +99,7 @@ export const getBoardNodeFromNetworkNode = (
     index: networkNode.index,
     level: networkNode.level,
     score: networkNode.score,
+    parent: networkNode.parent,
     priority: networkNode.priority,
     winner: networkNode.winner as Side,
     isOpenForCalculation: networkNode.isOpenForCalculation,
