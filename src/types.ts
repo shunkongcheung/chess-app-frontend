@@ -42,8 +42,8 @@ export interface BoardNode {
   isOpenForCalculation: boolean;
   // whether termination condition is reached
   isTerminated: boolean;
-  // connection nodes: the one that generate current node
-  parent?: number;
+  // connection nodes: the one that generate current node, for first node, parent == -1
+  parent: number;
   // connection nodes: not the one generate current node, but can also generate current node
   relatives: Array<number>;
   // connection nodes
