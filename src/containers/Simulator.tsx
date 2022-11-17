@@ -10,7 +10,6 @@ import {
 import { Board, Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
-import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
 import { useRouter } from "next/router";
 
 interface IProps {

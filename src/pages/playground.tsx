@@ -1,13 +1,15 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
-import { getInitialBoard, getHashFromBoard } from "../chess";
 import { Side } from "../types";
 
 import { getBoardFromHash } from "../chess";
 import Playground from "../containers/Playground";
 import { DEFAULT_RUN_TIMES, INITIAL_HASH } from "../constants";
 
-const Page: NextPage = ({ board, side, runTimes }: any) => {
-  return <Playground board={board} runTimes={runTimes} side={side} />;
+// const Page: NextPage = ({ board, side, runTimes }: any) => {
+//   return <Playground board={board} runTimes={runTimes} side={side} />;
+// }
+const Page: NextPage = () => {
+  return <Playground />;
 };
 
 export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
