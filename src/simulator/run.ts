@@ -148,12 +148,9 @@ const runHelper = async ({
       ]);
     }
 
-    if (isPriorityChanged) {
-      // only update if changed, reduce number of change to datastore
-      pointer.priority = newPriority;
-      await openSetStore.update(pointer.index, pointer);
-    }
+    pointer.priority = newPriority;
   }
+  await openSetStore.update(pointer.index, pointer);
 
   return { openSetStore };
 };
