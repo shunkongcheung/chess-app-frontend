@@ -53,7 +53,7 @@ export default async function handler(
     levelZeroSide,
     board,
   } = payload;
-
+  const startTime = performance.now();
   const [winner, score] = getBoardWinnerAndScore(board);
   let openSet: Array<Node> = [
     {
@@ -83,7 +83,8 @@ export default async function handler(
     if (existingData.runTimes <= remainRunTimes) {
       remainRunTimes -= existingData.runTimes;
       openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-      logger(`Generated.`);
+      const currentTime = Math.round(performance.now() - startTime);
+      logger(`Generated. ${currentTime}`);
     }
   } catch {}
 
@@ -100,7 +101,6 @@ export default async function handler(
     );
   };
 
-  const startTime = performance.now();
   let result = await run({
     levelZeroScore: levelZeroNode.score,
     levelZeroSide,
