@@ -4,17 +4,21 @@ import getConfig from "next/config";
 
 import { Node, Side } from "../types";
 import { NetworkNode, getNetworkNodeFromDataNode } from "./NetworkNode";
+import {getHashFromBoard} from "../chess";
 
 class ExportRecordTable extends Model {
   declare id: number;
   declare side: string;
   declare boardHash: string;
   declare runTimes: number;
+  declare total: number;
 }
 
 class NetworkNodeTable extends Model {
   declare recordId: string;
   declare index: number;
+  declare level: number;
+  declare shortHash: string;
   declare content: string;
 }
 
@@ -30,22 +34,6 @@ const getSequelize = async () => {
   await sequelize.authenticate();
   await sequelize.sync();
 
-  NetworkNodeTable.init(
-    {
-      recordId: {
-        type: DataTypes.INTEGER,
-      },
-      index: {
-        type: DataTypes.INTEGER,
-      },
-      content: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-      },
-    },
-    { sequelize }
-  );
-
   ExportRecordTable.init(
     {
       side: {
@@ -56,6 +44,30 @@ const getSequelize = async () => {
       },
       runTimes: {
         type: DataTypes.INTEGER,
+      },
+      total: {
+        type: DataTypes.INTEGER,
+      },
+    },
+    { sequelize }
+  );
+
+  NetworkNodeTable.init(
+    {
+      recordId: {
+        type: DataTypes.INTEGER,
+      },
+      index: {
+        type: DataTypes.INTEGER,
+      },
+      shortHash: {
+        type: DataTypes.STRING,
+      },
+      level: {
+        type: DataTypes.INTEGER,
+      },
+      content: {
+        type: DataTypes.TEXT,
       },
     },
     { sequelize }
@@ -78,17 +90,19 @@ export const storeOpenSet = async (
   let recordId = -1;
   let existingCount = 0;
   const existingExportRecord = await ExportRecordTable.findOne({
-    where: { boardHash, runTimes, side },
+    where: { boardHash, side },
   });
 
   if (existingExportRecord) {
     recordId = existingExportRecord.id;
-    existingCount = await NetworkNodeTable.count({ where: { recordId } });
+    existingCount = existingExportRecord.total;
+    await existingExportRecord.update({ runTimes, total: nodes.length });
   } else {
     const newExportRecord = await ExportRecordTable.create({
       boardHash,
       runTimes,
       side,
+      total: nodes.length,
     });
     recordId = newExportRecord.id;
   }
@@ -98,6 +112,8 @@ export const storeOpenSet = async (
     .map((networkNode) => ({
       recordId,
       index: networkNode.index,
+      level: networkNode.level,
+      shortHash: getHashFromBoard(networkNode.board),
       content: JSON.stringify(networkNode),
     }));
 
