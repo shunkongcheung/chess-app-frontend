@@ -7,12 +7,10 @@ import styled from "styled-components";
 import { BoardNode, Side } from "../types";
 import { Container, Card, ChessBoard, ScrollList } from "../components";
 import { getBoardFromHash, getBoardWinnerAndScore } from "../chess";
-import { nodeSorter } from "../simulator";
-
 
 interface FriendlyNode extends Omit<BoardNode, "children" | "parent"> {
   parent: BoardNode | null;
-  children: Array<BoardNode>
+  children: Array<BoardNode>;
 }
 
 interface IProps {
@@ -49,15 +47,15 @@ const Checker = ({
   };
 
   const filteredChildren = state.isSorted
-    ? [...currentNode.children].sort(nodeSorter)
+    ? [...currentNode.children]
     : [...currentNode.children].sort((a, b) => {
         if (a.index < b.index) return -1;
         if (a.index > b.index) return 1;
         return 0;
       });
 
-      const levelZeroBoard = getBoardFromHash(levelZeroNode.boardHash);
-      const currentNodeBoard = getBoardFromHash(currentNode.boardHash);
+  const levelZeroBoard = getBoardFromHash(levelZeroNode.boardHash);
+  const currentNodeBoard = getBoardFromHash(currentNode.boardHash);
   return (
     <Container>
       <MainContent>
@@ -166,7 +164,9 @@ const Checker = ({
             >
               <Link href={getUrl(currentNode.parent.index)}>
                 <a>
-                  <ChessBoard board={getBoardFromHash(currentNode.parent.boardHash)} />
+                  <ChessBoard
+                    board={getBoardFromHash(currentNode.parent.boardHash)}
+                  />
                 </a>
               </Link>
             </Card>
