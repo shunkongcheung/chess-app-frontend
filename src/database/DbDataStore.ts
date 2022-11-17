@@ -49,6 +49,7 @@ class DataStore {
         level: 0,
         score,
         winner,
+        parent: -1,
         priority: 0,
         isOpenForCalculation: true,
         isTerminated: false,
