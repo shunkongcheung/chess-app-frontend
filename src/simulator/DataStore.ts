@@ -1,4 +1,5 @@
 import { getHashFromBoard } from "../chess";
+import { getLogFormatter } from "../utils/Logger";
 
 export interface LinkedListNode<T> {
   node: T;
@@ -13,6 +14,8 @@ type GetKeyFromNode<T> = (node: T) => string;
 interface HashMap<T> {
   [x: string]: LinkedListNode<T>;
 }
+
+const logFormatter = getLogFormatter("DataStore");
 
 class DataStore<T> {
   private _count: number;
@@ -69,7 +72,7 @@ class DataStore<T> {
 
   public insert(node: T): T {
     if (!!this.getNode(node)) {
-      throw Error("insert: node already exists");
+      throw Error(logFormatter("node already exists"));
     }
 
     const linkedListNode: LinkedListNode<T> = { node };
@@ -96,7 +99,7 @@ class DataStore<T> {
       linkedListNode.prev = pointer.prev;
       linkedListNode.next = pointer;
 
-      if (!pointer.prev) throw Error("insert: prev is undefined");
+      if (!pointer.prev) throw Error(logFormatter("prev is undefined"));
       pointer.prev.next = linkedListNode;
       pointer.prev = linkedListNode;
     }
@@ -107,12 +110,8 @@ class DataStore<T> {
   public update(node: T): T {
     const key = this._getKeyFromNode(node);
     const linkedListNode = this._hashMap[key];
-    if (!linkedListNode) throw Error("update: linked list node not exist");
-
-    // let compare = this._sorter(node, linkedListNode.node);
-    // if (compare === 0) {
-    //   return linkedListNode.node;
-    // }
+    if (!linkedListNode)
+      throw Error(logFormatter("linked list node not exist"));
 
     if (linkedListNode.prev) linkedListNode.prev.next = linkedListNode.next;
     else if (linkedListNode.next) {

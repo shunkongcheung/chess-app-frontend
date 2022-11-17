@@ -4,6 +4,9 @@ import { getOpenSetNetworkNodes } from "../utils/Storage";
 
 import Checker from "../containers/Checker";
 import { INITIAL_HASH, PSEUDO_HIGH_PRIORITY } from "../constants";
+import { getLogFormatter } from "../utils/Logger";
+
+const logFormatter = getLogFormatter("/check");
 
 const Check: NextPage = ({
   levelZeroNode,
@@ -66,7 +69,7 @@ export const getServerSideProps = async ({
 
   const currentNetworkNode = networkNodes.find((item) => item.index === fIndex);
   if (!currentNetworkNode) {
-    throw Error(`/check: Cannot find index ${fIndex}`);
+    throw Error(logFormatter(`Cannot find index ${fIndex}`));
   }
 
   const currentNode = {

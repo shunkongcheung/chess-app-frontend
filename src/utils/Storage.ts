@@ -5,6 +5,7 @@ import getConfig from "next/config";
 import { Node, Side } from "../types";
 import { NetworkNode, getNetworkNodeFromDataNode } from "./NetworkNode";
 import { getHashFromBoard } from "../chess";
+import { getLogFormatter } from "./Logger";
 
 class ExportRecordTable extends Model {
   declare id: number;
@@ -21,6 +22,8 @@ class NetworkNodeTable extends Model {
   declare shortHash: string;
   declare content: string;
 }
+
+const logFormatter = getLogFormatter("Storage");
 
 const getSequelize = async () => {
   const { PROJECT_ROOT } = getConfig().serverRuntimeConfig;
@@ -140,7 +143,7 @@ export const getOpenSetNetworkNodes = async (
 
   if (!exportRecords.length) {
     await sequelize.close();
-    throw Error("getFileOpenSet: no such record");
+    throw Error(logFormatter("no such record"));
   }
 
   const bestExportRecord = exportRecords[0];
