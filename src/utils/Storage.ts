@@ -91,14 +91,12 @@ export const storeOpenSet = async (
   const networkNodes = nodes.map((node) => getNetworkNodeFromDataNode(node));
 
   let recordId = -1;
-  let existingCount = 0;
   const existingExportRecord = await ExportRecordTable.findOne({
     where: { boardHash, side },
   });
 
   if (existingExportRecord) {
     recordId = existingExportRecord.id;
-    existingCount = existingExportRecord.total;
     await existingExportRecord.update({ runTimes, total: nodes.length });
   } else {
     const newExportRecord = await ExportRecordTable.create({
@@ -110,8 +108,9 @@ export const storeOpenSet = async (
     recordId = newExportRecord.id;
   }
 
+  await NetworkNodeTable.destroy({ where: { recordId }});
+
   const tableEntries = networkNodes
-    .filter((networkNodes) => networkNodes.index >= existingCount)
     .map((networkNode) => ({
       recordId,
       index: networkNode.index,
