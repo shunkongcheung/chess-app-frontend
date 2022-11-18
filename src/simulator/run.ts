@@ -8,7 +8,8 @@ import {
 } from "../chess";
 
 import getPriorityScore from "./getPriorityScore";
-import DbDataStore from "../database/DbDataStore";
+// import Store from "../database/DbDataStore";
+import Store from "../database/InMemoryDataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
 interface Args {
@@ -17,13 +18,13 @@ interface Args {
   levelZeroSide: Side;
   runTimes: number;
   callbackInterval?: number;
-  onIntervalCallback?: (runIdx: number, dataStore: DbDataStore) => any;
+  onIntervalCallback?: (runIdx: number, dataStore: Store) => any;
 }
 
 interface InternalArgs {
   levelZeroScore: number;
   levelZeroSide: Side;
-  openSetStore: DbDataStore;
+  openSetStore: Store;
 }
 
 const run = async ({
@@ -34,14 +35,14 @@ const run = async ({
   levelZeroSide,
   runTimes,
 }: Args) => {
-  const openSetStore = new DbDataStore();
+  const openSetStore = new Store();
   const oldRunTimes = await openSetStore.initialize(
     levelZeroBoardHash,
     levelZeroSide
   );
 
   for (let idx = oldRunTimes; idx < runTimes; idx++) {
-    await runHelper({ levelZeroSide, levelZeroScore, openSetStore });
+    runHelper({ levelZeroSide, levelZeroScore, openSetStore });
 
     if (onIntervalCallback && idx % callbackInterval === 0) {
       await Promise.all([
@@ -54,12 +55,13 @@ const run = async ({
   return openSetStore;
 };
 
-const runHelper = async ({
+const runHelper = ({
   levelZeroScore,
   levelZeroSide,
   openSetStore,
 }: InternalArgs) => {
-  const pointer = await openSetStore.head();
+  const pointer = openSetStore.head();
+
   if (!pointer) {
     return;
   }
@@ -79,7 +81,7 @@ const runHelper = async ({
     );
 
     const level = pointer.level + 1;
-    const setLength = await openSetStore.count();
+    const setLength = openSetStore.count();
 
     nextNodes = [];
     const potentialNextNodes = nextBoards.map((board) => {
@@ -108,14 +110,14 @@ const runHelper = async ({
     let newNodeCount = 0;
     for (let idx = 0; idx < potentialNextNodes.length; idx++) {
       const potentialNode = potentialNextNodes[idx];
-      const existingNode = await openSetStore.getNode(potentialNode);
+      const existingNode = openSetStore.getNode(potentialNode);
       if (existingNode) {
         existingNode.relatives.push(pointer.index);
         nextNodes.push(existingNode.index);
       } else {
         potentialNode.index = setLength + newNodeCount;
         newNodeCount += 1;
-        await openSetStore.insert(potentialNode);
+        openSetStore.insert(potentialNode);
         nextNodes.push(potentialNode.index);
       }
     }
@@ -128,7 +130,7 @@ const runHelper = async ({
     pointer.isTerminated = true;
   }
   if (pointer.children.length) {
-    const childrenBoardNodes = await openSetStore.getNodes(pointer.children);
+    const childrenBoardNodes = openSetStore.getNodes(pointer.children);
     const childrenPriorities = childrenBoardNodes.map((node) => node!.priority);
     const newPriority = -Math.max(...childrenPriorities);
     const isPriorityChanged = pointer.priority !== newPriority;
@@ -136,21 +138,21 @@ const runHelper = async ({
     if (isPriorityChanged && pointer.parent >= 0) {
       // if my score has changed, parent needs to re-eveluate, force it to the
       // front such that it would be picked up on next iteration.
-      const parent = await openSetStore.getNodeById(pointer.parent);
+      const parent = openSetStore.getNodeById(pointer.parent);
       parent.isOpenForCalculation = true;
       parent.priority = PSEUDO_HIGH_PRIORITY;
 
-      await Promise.all([
-        openSetStore.update(pointer.parent, parent),
-        ...pointer.relatives.map(async (relative) =>
-          openSetStore.update(relative, { isOpenForCalculation: true })
-        ),
-      ]);
+      openSetStore.update(pointer.parent, parent);
+
+      for (let idx = 0; idx < pointer.relatives.length; idx++) {
+        const relative = pointer.relatives[idx];
+        openSetStore.update(relative, { isOpenForCalculation: true });
+      }
     }
 
     pointer.priority = newPriority;
   }
-  await openSetStore.update(pointer.index, pointer);
+  openSetStore.update(pointer.index, pointer);
 
   return { openSetStore };
 };

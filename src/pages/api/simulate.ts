@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
 import { run } from "../../simulator";
-import DbDataStore from "../../database/DbDataStore";
+import { DataStore } from "../../database/BaseDataStore";
 import { Side, Board, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
 import { getCheckInfo } from "../../database/getCheckInfo";
@@ -27,6 +27,7 @@ export interface Payload extends Partial<Params> {
 
 export interface Result extends Params {
   total: number;
+  runTimes: number;
   timeTaken: number;
   pointer?: BoardNode;
   openSet: Array<BoardNode>;
@@ -55,7 +56,7 @@ export default async function handler(
   const boardHash = getHashFromBoard(board);
   let remainRunTimes = runTimes;
 
-  const onIntervalCallback = async (idx: number, store: DbDataStore) => {
+  const onIntervalCallback = async (idx: number, store: DataStore) => {
     const currentTime = Math.round(performance.now() - startTime);
     const count = await store.count();
     logger(
@@ -79,7 +80,11 @@ export default async function handler(
 
   const hasPrevPointer = pointerId >= 0;
 
-  const { recordId, currentNode: pointerNode } = await getCheckInfo(
+  const {
+    recordId,
+    currentNode: pointerNode,
+    runTimes: finishRunTimes,
+  } = await getCheckInfo(
     levelZeroSide,
     boardHash,
     hasPrevPointer ? pointerId : 0
@@ -112,7 +117,7 @@ export default async function handler(
     pageSize,
     isSorted,
     isOpenOnly,
-    runTimes,
+    runTimes: finishRunTimes,
     total,
     pointer,
     openSet: query.map(getBoardNodeFromNetworkNode),

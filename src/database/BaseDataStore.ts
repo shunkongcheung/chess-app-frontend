@@ -1,6 +1,4 @@
-import { Op } from "sequelize";
 import { getBoardFromHash, getBoardWinnerAndScore } from "../chess";
-import { PSEUDO_HIGH_PRIORITY } from "../constants";
 import { BoardNode, Side } from "../types";
 
 import { ExportRecordTable } from "./ExportRecordTable";
@@ -9,13 +7,13 @@ import { NetworkNodeTable } from "./NetworkNodeTable";
 export interface DataStore {
   initialize: (boardHash: string, side: Side) => Promise<number>;
   record: (runTimes: number) => Promise<void>;
-  count: () => Promise<number>;
-  getNode: (boardNode: BoardNode) => Promise<BoardNode | undefined>;
-  getNodeById: (index: number) => Promise<BoardNode | undefined>;
-  getNodes: (indexes: Array<number>) => Promise<Array<BoardNode>>;
-  head: () => Promise<BoardNode | undefined>;
-  insert: (boardNode: BoardNode) => Promise<void>;
-  update: (index: number, boardNode: Partial<BoardNode>) => Promise<void>;
+  count: () => number;
+  getNode: (boardNode: BoardNode) => BoardNode | undefined;
+  getNodeById: (index: number) => BoardNode | undefined;
+  getNodes: (indexes: Array<number>) => Array<BoardNode>;
+  head: () => BoardNode | undefined;
+  insert: (boardNode: BoardNode) => void;
+  update: (index: number, boardNode: Partial<BoardNode>) => void;
 }
 
 export const getNetworkNodeFromBoardNode = (
@@ -77,9 +75,14 @@ export const record = async (recordId: number, runTimes: number) => {
     NetworkNodeTable.findAll({
       where: {
         recordId,
-        priority: { [Op.ne]: PSEUDO_HIGH_PRIORITY },
+        // priority: { [Op.ne]: PSEUDO_HIGH_PRIORITY },
+        isTerminated: false,
+        isOpenForCalculation: true,
       },
-      order: [["priority", "desc"]],
+      order: [
+        ["priority", "desc"],
+        ["level", "asc"],
+      ],
       limit: 1,
     }),
     NetworkNodeTable.count({ where: { recordId } }),

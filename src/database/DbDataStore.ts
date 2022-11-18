@@ -7,13 +7,14 @@ import {
 } from "./NetworkNodeTable";
 
 import {
-  DataStore,
+  // DataStore,
   initialize,
   getNetworkNodeFromBoardNode,
   record,
 } from "./BaseDataStore";
 
-class DbDataStore implements DataStore {
+// class DbDataStore implements DataStore {
+class DbDataStore {
   private _recordId: number = -1;
 
   public async initialize(boardHash: string, side: Side) {

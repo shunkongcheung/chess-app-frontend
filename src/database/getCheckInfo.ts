@@ -66,8 +66,9 @@ export const getCheckInfo = async (
 
   const currBoardNode = getBoardNodeFromNetworkNode(currentNetworkNode);
   const parentId = currBoardNode.parent;
+
   const [parent, children] = await Promise.all([
-    parentId
+    parentId >= 0
       ? NetworkNodeTable.findOne({ where: { recordId, index: parentId } })
       : null,
     NetworkNodeTable.findAll({
