@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
 
@@ -16,8 +16,7 @@ interface IProps {
   toBeMovedBy: Side;
 }
 
-interface State
-  extends Omit<Result, "pointer" | "nextNodes" | "levelOneNodes" | "openSet"> {
+interface State extends Omit<Result, "pointer" | "nextNodes" | "openSet"> {
   pointer?: Node;
   openSet: Array<Node>;
   nextNodes: Array<Node>; // debug only
@@ -66,6 +65,7 @@ const Simulator = ({
   const [state, setState] = useState<State>({
     openSet: [],
     nextNodes: [],
+    levelOneNodes: [],
     runTimes: 0,
     total: 1,
     timeTaken: 0,
@@ -75,6 +75,22 @@ const Simulator = ({
     isOpenOnly: false,
     isSorted: false,
   });
+
+  useEffect(() => {
+    setState({
+      openSet: [],
+      nextNodes: [],
+      levelOneNodes: [],
+      runTimes: 0,
+      total: 1,
+      timeTaken: 0,
+      pageNum: 1,
+      pageSize: 1,
+      isExport: false,
+      isOpenOnly: false,
+      isSorted: false,
+    });
+  }, [board]);
 
   const handleClick = useCallback(
     async (
@@ -114,10 +130,15 @@ const Simulator = ({
   const isNextPageAvailable = state.pageNum < totalPage;
 
   const { query } = useRouter();
-  const getUrl = (board: Board) => {
+  const getUrl = (board: Board, isSideSwitched = true) => {
     const { side, exportTimes, increment } = query;
     const shortHash = getHashFromBoard(board);
-    return `/simulate?side=${side}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
+    const newSide = isSideSwitched
+      ? side === Side.Top
+        ? Side.Bottom
+        : Side.Top
+      : side;
+    return `/simulate?side=${newSide}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
   };
 
   return (
@@ -136,34 +157,38 @@ const Simulator = ({
                 {
                   title: (
                     <button
-                      onClick={() =>
-                        setState((old) => {
-                          handleClick(
-                            old.pageNum,
-                            !old.isOpenOnly,
-                            old.isSorted,
-                            old.runTimes
-                          );
-                          return old;
-                        })
-                      }
+                      onClick={useCallback(
+                        () =>
+                          setState((old) => {
+                            handleClick(
+                              old.pageNum,
+                              !old.isOpenOnly,
+                              old.isSorted,
+                              old.runTimes
+                            );
+                            return old;
+                          }),
+                        [handleClick]
+                      )}
                     >
                       Open: {`${state.isOpenOnly}`}
                     </button>
                   ),
                   value: (
                     <button
-                      onClick={() =>
-                        setState((old) => {
-                          handleClick(
-                            old.pageNum,
-                            old.isOpenOnly,
-                            !old.isSorted,
-                            old.runTimes
-                          );
-                          return old;
-                        })
-                      }
+                      onClick={useCallback(
+                        () =>
+                          setState((old) => {
+                            handleClick(
+                              old.pageNum,
+                              old.isOpenOnly,
+                              !old.isSorted,
+                              old.runTimes
+                            );
+                            return old;
+                          }),
+                        [handleClick]
+                      )}
                     >
                       Sorted: {`${state.isSorted}`}
                     </button>
@@ -173,18 +198,20 @@ const Simulator = ({
                   title: (
                     <button
                       disabled={!isPrevPageAvailable}
-                      onClick={() =>
-                        isPrevPageAvailable &&
-                        setState((old) => {
-                          handleClick(
-                            old.pageNum - 1,
-                            old.isOpenOnly,
-                            old.isSorted,
-                            old.runTimes
-                          );
-                          return old;
-                        })
-                      }
+                      onClick={useCallback(
+                        () =>
+                          isPrevPageAvailable &&
+                          setState((old) => {
+                            handleClick(
+                              old.pageNum - 1,
+                              old.isOpenOnly,
+                              old.isSorted,
+                              old.runTimes
+                            );
+                            return old;
+                          }),
+                        [isPrevPageAvailable, handleClick]
+                      )}
                     >
                       prev
                     </button>
@@ -192,18 +219,20 @@ const Simulator = ({
                   value: (
                     <button
                       disabled={!isNextPageAvailable}
-                      onClick={() =>
-                        isNextPageAvailable &&
-                        setState((old) => {
-                          handleClick(
-                            old.pageNum + 1,
-                            old.isOpenOnly,
-                            old.isSorted,
-                            old.runTimes
-                          );
-                          return old;
-                        })
-                      }
+                      onClick={useCallback(
+                        () =>
+                          isNextPageAvailable &&
+                          setState((old) => {
+                            handleClick(
+                              old.pageNum + 1,
+                              old.isOpenOnly,
+                              old.isSorted,
+                              old.runTimes
+                            );
+                            return old;
+                          }),
+                        [isNextPageAvailable, handleClick]
+                      )}
                     >
                       next
                     </button>
@@ -212,9 +241,10 @@ const Simulator = ({
                 {
                   title: (
                     <button
-                      onClick={async () =>
-                        await handleClick(1, false, false, exportTimes, true)
-                      }
+                      onClick={useCallback(
+                        () => handleClick(1, false, false, exportTimes, true),
+                        [handleClick, exportTimes]
+                      )}
                     >
                       export
                     </button>
@@ -222,17 +252,19 @@ const Simulator = ({
 
                   value: (
                     <button
-                      onClick={() =>
-                        setState((old) => {
-                          handleClick(
-                            old.pageNum,
-                            old.isOpenOnly,
-                            old.isSorted,
-                            old.runTimes + increment
-                          );
-                          return old;
-                        })
-                      }
+                      onClick={useCallback(
+                        () =>
+                          setState((old) => {
+                            handleClick(
+                              old.pageNum,
+                              old.isOpenOnly,
+                              old.isSorted,
+                              old.runTimes + increment
+                            );
+                            return old;
+                          }),
+                        [handleClick, increment]
+                      )}
                     >
                       run
                     </button>
@@ -310,7 +342,7 @@ const Simulator = ({
       <SecondaryContainer>
         <ScrollList
           columns={1}
-          listItems={(state.nextNodes || []).map((node, index) => (
+          listItems={state.levelOneNodes.map((node, index) => (
             <Card
               key={`NextNode-${index}`}
               descriptions={[

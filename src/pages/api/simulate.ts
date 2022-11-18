@@ -1,17 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
-import { nodeSorter, run } from "../../simulator";
+// import { nodeSorter, run } from "../../simulator";
+import { run } from "../../simulator";
 import DataStore from "../../simulator/DataStore";
 import { Side, Board, Node } from "../../types";
 import { getLogger } from "../../utils/Logger";
 import {
   NetworkNode,
   getNetworkNodeFromDataNode,
-  getOpenSetFromNetworkOpenSet,
+  // getOpenSetFromNetworkOpenSet,
 } from "../../utils/NetworkNode";
 
-import { getOpenSetNetworkNodes } from "../../database/getOpenSetNetworkNodes";
+// import { getOpenSetNetworkNodes } from "../../database/getOpenSetNetworkNodes";
 import { storeOpenSet } from "../../database/storeOpenSet";
 
 interface Params {
@@ -73,21 +74,21 @@ export default async function handler(
 
   const boardHash = getHashFromBoard(board);
   let remainRunTimes = runTimes;
-  try {
-    const existingData = await getOpenSetNetworkNodes(
-      levelZeroSide,
-      boardHash,
-      remainRunTimes
-    );
-    logger(`Exists. ${existingData.runTimes}/${remainRunTimes}`);
+  // try {
+  //   const existingData = await getOpenSetNetworkNodes(
+  //     levelZeroSide,
+  //     boardHash,
+  //     remainRunTimes
+  //   );
+  //   logger(`Exists. ${existingData.runTimes}/${remainRunTimes}`);
 
-    if (existingData.runTimes <= remainRunTimes) {
-      remainRunTimes -= existingData.runTimes;
-      openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-      const currentTime = Math.round(performance.now() - startTime);
-      logger(`Generated. ${currentTime}`);
-    }
-  } catch {}
+  //   if (existingData.runTimes <= remainRunTimes) {
+  //     remainRunTimes -= existingData.runTimes;
+  //     openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
+  //     const currentTime = Math.round(performance.now() - startTime);
+  //     logger(`Generated. ${currentTime}`);
+  //   }
+  // } catch {}
 
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
@@ -139,9 +140,7 @@ export default async function handler(
       : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
-    levelOneNodes: resultSet
-      .filter((node) => node.level === 1)
-      .sort(nodeSorter),
+    levelOneNodes: resultSet.filter((node) => node.level === 1),
     timeTaken,
   };
 

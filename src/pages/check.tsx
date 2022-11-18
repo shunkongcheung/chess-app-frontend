@@ -1,5 +1,7 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
 import { Side } from "../types";
+
+import { getSequelize } from "../database/getSequelize";
 import { getCheckInfo } from "../database/getCheckInfo";
 
 import Checker from "../containers/Checker";
@@ -45,25 +47,32 @@ export const getServerSideProps = async ({
     };
   }
 
-  const {
-    currentNode,
-    levelZeroNode,
-    maxReachedNode,
-    runTimes,
-    highestPriorityNode,
-    total,
-  } = await getCheckInfo(fSide, fShortHash, fIndex);
-
-  return {
-    props: {
+  const sequelize = await getSequelize();
+  try {
+    const {
       currentNode,
+      levelZeroNode,
       maxReachedNode,
       runTimes,
-      levelZeroNode,
       highestPriorityNode,
       total,
-    },
-  };
+    } = await getCheckInfo(fSide, fShortHash, fIndex);
+    await sequelize.close();
+
+    return {
+      props: {
+        currentNode,
+        maxReachedNode,
+        runTimes,
+        levelZeroNode,
+        highestPriorityNode,
+        total,
+      },
+    };
+  } catch (err) {
+    await sequelize.close();
+    throw err;
+  }
 };
 
 export default Check;

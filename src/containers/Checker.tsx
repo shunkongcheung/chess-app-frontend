@@ -6,7 +6,7 @@ import styled from "styled-components";
 
 import { Node, Side } from "../types";
 import { Container, Card, ChessBoard, ScrollList } from "../components";
-import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import { getBoardWinnerAndScore } from "../chess";
 import { nodeSorter } from "../simulator";
 
 interface IProps {

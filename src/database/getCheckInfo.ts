@@ -4,7 +4,6 @@ import { Side } from "../types";
 import { NetworkNode } from "../utils/NetworkNode";
 import { getLogFormatter } from "../utils/Logger";
 
-import { getSequelize } from "./getSequelize";
 import { ExportRecordTable } from "./ExportRecordTable";
 import { NetworkNodeTable } from "./NetworkNodeTable";
 
@@ -15,13 +14,10 @@ export const getCheckInfo = async (
   boardHash: string,
   index: number
 ) => {
-  const sequelize = await getSequelize();
-
   const where: WhereOptions = { boardHash, side };
   const exportRecord = await ExportRecordTable.findOne({ where });
 
   if (!exportRecord) {
-    await sequelize.close();
     throw Error(logFormatter("no export record"));
   }
   const {
@@ -47,21 +43,17 @@ export const getCheckInfo = async (
   ]);
 
   if (!currentNetworkNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no index ${index}`));
   }
   if (!levelZeroNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no levelZeroNode`));
   }
   if (!highestPriorityNode) {
-    await sequelize.close();
     throw Error(
       logFormatter(`no highestPriorityNode ${highestPriorityNodeIndex}`)
     );
   }
   if (!maxReachedNode) {
-    await sequelize.close();
     throw Error(logFormatter(`no maxReachedNode ${maxReachedNodeIndex}`));
   }
 
