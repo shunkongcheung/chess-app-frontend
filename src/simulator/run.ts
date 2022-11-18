@@ -35,7 +35,7 @@ const run = async ({
   runTimes,
 }: Args) => {
   const openSetStore = new DbDataStore();
-  const oldRunTimes = await openSetStore.initalize(
+  const oldRunTimes = await openSetStore.initialize(
     levelZeroBoardHash,
     levelZeroSide
   );

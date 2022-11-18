@@ -1,94 +1,29 @@
 import { Op } from "sequelize";
-import { getBoardFromHash, getBoardWinnerAndScore } from "../chess";
-import { PSEUDO_HIGH_PRIORITY } from "../constants";
 import { BoardNode, Side } from "../types";
 
-import { ExportRecordTable } from "./ExportRecordTable";
 import {
   getBoardNodeFromNetworkNode,
   NetworkNodeTable,
 } from "./NetworkNodeTable";
 
-class DataStore {
+import {
+  DataStore,
+  initialize,
+  getNetworkNodeFromBoardNode,
+  record,
+} from "./BaseDataStore";
+
+class DbDataStore implements DataStore {
   private _recordId: number = -1;
 
-  private _getNetworkNodeFromBoardNode(boardNode: Partial<BoardNode>) {
-    const ret: { [x: string]: any } = {
-      ...boardNode,
-      recordId: this._recordId,
-    };
-    if (!Number.isNaN(ret.level)) ret.isEvenLevel = ret.level % 2 === 0;
-    if (boardNode.relatives) ret.relatives = JSON.stringify(ret.relatives);
-    if (boardNode.children) ret.children = JSON.stringify(ret.children);
-    return ret;
-  }
-
-  public async initalize(boardHash: string, side: Side) {
-    const [exportRecordTeble, isCreated] = await ExportRecordTable.findOrCreate(
-      {
-        where: { boardHash, side },
-        defaults: {
-          boardHash,
-          side,
-          runTimes: 0,
-          total: 0,
-          highestPriorityNodeIndex: 0,
-          maxReachedNodeIndex: 0,
-        },
-      }
-    );
-    this._recordId = exportRecordTeble.id;
-
-    if (isCreated) {
-      const [winner, score] = getBoardWinnerAndScore(
-        getBoardFromHash(boardHash)
-      );
-      const createInfo = {
-        boardHash,
-        index: 0,
-        level: 0,
-        score,
-        winner,
-        parent: -1,
-        priority: 0,
-        isOpenForCalculation: true,
-        isTerminated: false,
-        relatives: [],
-        children: [],
-      };
-      await this.insert(createInfo);
-    }
-
-    return exportRecordTeble.runTimes;
+  public async initialize(boardHash: string, side: Side) {
+    const { recordId, runTimes } = await initialize(boardHash, side);
+    this._recordId = recordId;
+    return runTimes;
   }
 
   public async record(runTimes: number) {
-    const [maxReachedNode, highestPriorityNode, total] = await Promise.all([
-      NetworkNodeTable.findAll({
-        where: { recordId: this._recordId },
-        order: [["level", "desc"]],
-        limit: 1,
-      }),
-      NetworkNodeTable.findAll({
-        where: {
-          recordId: this._recordId,
-          priority: { [Op.ne]: PSEUDO_HIGH_PRIORITY },
-        },
-        order: [["priority", "desc"]],
-        limit: 1,
-      }),
-      this.count(),
-    ]);
-
-    await ExportRecordTable.update(
-      {
-        maxReachedNodeIndex: maxReachedNode[0]?.index || 0,
-        highestPriorityNodeIndex: highestPriorityNode[0]?.index || 0,
-        runTimes,
-        total,
-      },
-      { where: { id: this._recordId } }
-    );
+    record(this._recordId, runTimes);
   }
 
   public async count(): Promise<number> {
@@ -145,18 +80,20 @@ class DataStore {
   }
 
   public async insert(boardNode: BoardNode): Promise<void> {
-    await NetworkNodeTable.create(this._getNetworkNodeFromBoardNode(boardNode));
+    await NetworkNodeTable.create(
+      getNetworkNodeFromBoardNode(this._recordId, boardNode)
+    );
   }
 
   public async update(
     index: number,
     boardNode: Partial<BoardNode>
   ): Promise<void> {
-    const updatedInfo = this._getNetworkNodeFromBoardNode(boardNode);
+    const updatedInfo = getNetworkNodeFromBoardNode(this._recordId, boardNode);
     await NetworkNodeTable.update(updatedInfo, {
       where: { recordId: this._recordId, index },
     });
   }
 }
 
-export default DataStore;
+export default DbDataStore;
