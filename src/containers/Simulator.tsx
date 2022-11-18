@@ -3,7 +3,7 @@ import Link from "next/link";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
-import { Board, Side, Node } from "../types";
+import { Board, Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
 import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
@@ -17,9 +17,9 @@ interface IProps {
 }
 
 interface State extends Omit<Result, "pointer" | "nextNodes" | "openSet"> {
-  pointer?: Node;
-  openSet: Array<Node>;
-  nextNodes: Array<Node>; // debug only
+  pointer?: BoardNode;
+  openSet: Array<BoardNode>;
+  nextNodes: Array<BoardNode>; // debug only
 }
 
 const MyContainer = styled(Container)`
@@ -114,7 +114,7 @@ const Simulator = ({
         ...oldState,
         ...response,
         pointer: response.pointer
-          ? (response.pointer as unknown as Node)
+          ? (response.pointer as unknown as BoardNode)
           : undefined,
         openSet: newOpenSet,
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),

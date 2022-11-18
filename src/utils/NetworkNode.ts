@@ -1,13 +1,13 @@
-import { Node } from "../types";
+import { BoardNode } from "../types";
 
 export interface NetworkNode
-  extends Omit<Node, "parent" | "children" | "relatives"> {
+  extends Omit<BoardNode, "parent" | "children" | "relatives"> {
   parent?: number;
   children: Array<number>;
   relatives: Array<number>;
 }
 
-export const getNetworkNodeFromDataNode = (node: Node): NetworkNode => ({
+export const getNetworkNodeFromDataNode = (node: BoardNode): NetworkNode => ({
   ...node,
   parent: node.parent ? node.parent.index : undefined,
   children: node.children.map((item) => item.index),
@@ -16,8 +16,8 @@ export const getNetworkNodeFromDataNode = (node: Node): NetworkNode => ({
 
 export const getOpenSetFromNetworkOpenSet = (
   networkOpenSet: Array<NetworkNode>
-): Array<Node> => {
-  const openSet: Array<Node> = networkOpenSet.map((node) => ({
+): Array<BoardNode> => {
+  const openSet: Array<BoardNode> = networkOpenSet.map((node) => ({
     ...node,
     parent: undefined,
     children: [],

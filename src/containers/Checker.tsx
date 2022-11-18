@@ -4,16 +4,16 @@ import Link from "next/link";
 
 import styled from "styled-components";
 
-import { Node, Side } from "../types";
+import { BoardNode, Side } from "../types";
 import { Container, Card, ChessBoard, ScrollList } from "../components";
 import { getBoardWinnerAndScore } from "../chess";
 import { nodeSorter } from "../simulator";
 
 interface IProps {
-  currentNode: Node;
-  levelZeroNode: Node;
-  highestPriorityNode: Node;
-  maxReachedNode: Node;
+  currentNode: BoardNode;
+  levelZeroNode: BoardNode;
+  highestPriorityNode: BoardNode;
+  maxReachedNode: BoardNode;
   runTimes: number;
   total: number;
 }

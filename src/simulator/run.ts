@@ -1,4 +1,4 @@
-import { Node, Side } from "../types";
+import { BoardNode, Side } from "../types";
 import {
   getAllNextPositions,
   getBoardWinnerAndScore,
@@ -16,27 +16,27 @@ interface Args {
   callbackInterval?: number;
   levelZeroScore: number;
   levelZeroSide: Side;
-  openSet: Array<Node>;
+  openSet: Array<BoardNode>;
   onIntervalCallback?: (
     runIdx: number,
-    dataStore: DataStore<Node>,
+    dataStore: DataStore<BoardNode>,
     rest: Omit<Ret, "openSet">
   ) => any;
   runTimes: number;
 }
 
 interface Ret {
-  openSet: Array<Node>;
-  pointer?: Node; // debug only
-  nextNodes: Array<Node>; // debug only
+  openSet: Array<BoardNode>;
+  pointer?: BoardNode; // debug only
+  nextNodes: Array<BoardNode>; // debug only
 }
 
 interface InternalArgs extends Omit<Args, "openSet" | "runTimes"> {
-  openSetStore: DataStore<Node>;
+  openSetStore: DataStore<BoardNode>;
 }
 
 interface InternalRet extends Omit<Ret, "openSet"> {
-  openSetStore: DataStore<Node>;
+  openSetStore: DataStore<BoardNode>;
 }
 
 const run = async ({
@@ -50,12 +50,16 @@ const run = async ({
     return { openSet, nextNodes: [] };
   }
 
-  const getKeyFromNode = (node: Node) => {
+  const getKeyFromNode = (node: BoardNode) => {
     const boardHash = getHashFromBoard(node.board);
     return `${boardHash}_${node.level % 2}`;
   };
 
-  const openSetStore = new DataStore<Node>(getKeyFromNode, nodeSorter, openSet);
+  const openSetStore = new DataStore<BoardNode>(
+    getKeyFromNode,
+    nodeSorter,
+    openSet
+  );
 
   let ret = runHelper({ ...args, openSetStore });
   for (let idx = 1; idx < runTimes; idx++) {
@@ -77,7 +81,7 @@ const run = async ({
   return { ...rest, openSet: retOpenSetStore.asArray() };
 };
 
-const getPointer = (head: LinkedListNode<Node>): Node | undefined => {
+const getPointer = (head: LinkedListNode<BoardNode>): BoardNode | undefined => {
   while (true) {
     if (!head.node.isTerminated && head.node.isOpenForCalculation)
       return head.node;
@@ -98,7 +102,7 @@ const runHelper = ({
 
   pointer.isOpenForCalculation = false;
 
-  let nextNodes: Array<Node> = pointer.children;
+  let nextNodes: Array<BoardNode> = pointer.children;
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
   const pointerSide = pointer.level % 2 === 0 ? levelZeroSide : levelOneSide;
   const isPointerSideTop = pointerSide === Side.Top;
@@ -116,7 +120,7 @@ const runHelper = ({
     nextNodes = nextBoards
       .map((board) => {
         const [winner, score] = getBoardWinnerAndScore(board);
-        const node: Node = {
+        const node: BoardNode = {
           board,
           level,
           score,

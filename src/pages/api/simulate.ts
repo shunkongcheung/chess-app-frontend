@@ -1,18 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
-// import { nodeSorter, run } from "../../simulator";
 import { run } from "../../simulator";
 import DataStore from "../../simulator/DataStore";
-import { Side, Board, Node } from "../../types";
+import { Side, Board, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
 import {
   NetworkNode,
   getNetworkNodeFromDataNode,
-  // getOpenSetFromNetworkOpenSet,
 } from "../../utils/NetworkNode";
 
-// import { getOpenSetNetworkNodes } from "../../database/getOpenSetNetworkNodes";
 import { storeOpenSet } from "../../database/storeOpenSet";
 
 interface Params {
@@ -57,7 +54,7 @@ export default async function handler(
   } = payload;
   const startTime = performance.now();
   const [winner, score] = getBoardWinnerAndScore(board);
-  let openSet: Array<Node> = [
+  let openSet: Array<BoardNode> = [
     {
       index: 0,
       board,
@@ -92,7 +89,10 @@ export default async function handler(
 
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
-  const onIntervalCallback = async (idx: number, store: DataStore<Node>) => {
+  const onIntervalCallback = async (
+    idx: number,
+    store: DataStore<BoardNode>
+  ) => {
     if (isExport) {
       const openSet = store.asArray();
       await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);

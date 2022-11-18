@@ -1,4 +1,4 @@
-import { Node, Side } from "../types";
+import { BoardNode, Side } from "../types";
 import { getHashFromBoard } from "../chess";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
@@ -11,7 +11,7 @@ import { getSequelize } from "./getSequelize";
 export const storeOpenSet = async (
   side: Side,
   boardHash: string,
-  nodes: Array<Node>,
+  nodes: Array<BoardNode>,
   runTimes: number
 ) => {
   const sequelize = await getSequelize();

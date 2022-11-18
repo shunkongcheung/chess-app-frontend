@@ -1,6 +1,6 @@
-import { Node, Side } from "../types";
+import { BoardNode, Side } from "../types";
 
-const getIsNodeTerminated = (node: Node): boolean => {
+const getIsNodeTerminated = (node: BoardNode): boolean => {
   // termination condition: already marked as terminated
   if (node.isTerminated) return true;
 
