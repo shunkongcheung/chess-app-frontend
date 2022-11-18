@@ -4,16 +4,16 @@ import { BoardNode, Side } from "../types";
 import { ExportRecordTable } from "./ExportRecordTable";
 import { NetworkNodeTable } from "./NetworkNodeTable";
 
-export interface DataStore {
+export interface DataStore <T = BoardNode>{
   initialize: (boardHash: string, side: Side) => Promise<number>;
   record: (runTimes: number) => Promise<void>;
   count: () => number;
-  getNode: (boardNode: BoardNode) => BoardNode | undefined;
-  getNodeById: (index: number) => BoardNode | undefined;
-  getNodes: (indexes: Array<number>) => Array<BoardNode>;
-  head: () => BoardNode | undefined;
-  insert: (boardNode: BoardNode) => void;
-  update: (index: number, boardNode: Partial<BoardNode>) => void;
+  getNode: (boardNode: T) => T | undefined;
+  getNodeById: (index: number) => T | undefined;
+  getChildren: (boardNode: T) => Array<T>;
+  head: () => T | undefined;
+  insert: (boardNode: T) => void;
+  update: (index: number, boardNode: Partial<T>) => void;
 }
 
 export const getNetworkNodeFromBoardNode = (

@@ -130,7 +130,7 @@ const runHelper = ({
     pointer.isTerminated = true;
   }
   if (pointer.children.length) {
-    const childrenBoardNodes = openSetStore.getNodes(pointer.children);
+    const childrenBoardNodes = openSetStore.getChildren(pointer);
     const childrenPriorities = childrenBoardNodes.map((node) => node!.priority);
     const newPriority = -Math.max(...childrenPriorities);
     const isPriorityChanged = pointer.priority !== newPriority;

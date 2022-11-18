@@ -136,8 +136,8 @@ class InMemoryDataStore implements DataStore {
     return node;
   }
 
-  public getNodes(indexes: Array<number>): Array<BoardNode> {
-    return indexes
+  public getChildren(node: BoardNode): Array<BoardNode> {
+    return node.children
       .map((index) => this._indexMap[index]?.node)
       .filter((item) => !!item);
   }
