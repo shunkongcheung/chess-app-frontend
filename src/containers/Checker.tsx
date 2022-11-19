@@ -188,6 +188,7 @@ const Checker = ({
                   { title: "Priority", value: node.priority },
                   { title: "Is Open", value: `${node.isOpenForCalculation}` },
                   { title: "Is Terminated", value: `${node.isTerminated}` },
+                  { title: "Children #", value: `${node.children.length}` },
                 ]}
               >
                 <Link href={getUrl(node.index)}>

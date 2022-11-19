@@ -351,6 +351,7 @@ const Simulator = ({
                 { title: "Level", value: node.level },
                 { title: "Score", value: node.score },
                 { title: "Priority", value: node.priority },
+                { title: "Children #", value: node.children.length },
               ]}
             >
               <Link href={getUrl(node.boardHash)}>
