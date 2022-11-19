@@ -63,6 +63,24 @@ const run = async ({
   );
 
   let ret = runHelper({ ...args, openSetStore });
+  if (runTimes > 1) {
+    // force all level 1 to be evaulate at least once
+    const oneRunOpenSetArr = ret.openSetStore
+      .asArray()
+      .map((node) => {
+        if (node.level === 1) {
+          node.priority = PSEUDO_HIGH_PRIORITY;
+        }
+        return node;
+      })
+      .sort(nodeSorter);
+    ret.openSetStore = new DataStore<BoardNode>(
+      getKeyFromNode,
+      nodeSorter,
+      oneRunOpenSetArr
+    );
+  }
+
   for (let idx = 1; idx < runTimes; idx++) {
     ret = runHelper({ ...args, openSetStore: ret.openSetStore });
 
@@ -180,7 +198,6 @@ const runHelper = ({
         // openSetStore.update(relative);
       });
     }
-
 
     pointer.priority = newPriority;
     openSetStore.update(pointer);
