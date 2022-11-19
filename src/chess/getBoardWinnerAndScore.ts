@@ -29,14 +29,20 @@ const getBoardWinnerAndScore = (board: Board): [Side, number] => {
 
         const distanceFromMiddle = Math.abs(colIndex - MID_COLUMN_INDEX);
 
-        if (distanceFromStarter > 0) {
-          const loggedValue = Math.log(Math.abs(distanceFromStarter));
+        if (distanceFromStarter >= 0) {
+          const loggedValue =
+            distanceFromStarter === 0
+              ? 0
+              : Math.log(Math.abs(distanceFromStarter));
           positional +=
             (isUpperPiece ? -loggedValue : loggedValue) / TOTAL_PIECE_COUNT;
         }
 
-        if (distanceFromMiddle > 0) {
-          const loggedValue = Math.log(Math.abs(distanceFromMiddle));
+        if (distanceFromMiddle >= 0) {
+          const loggedValue =
+            distanceFromMiddle === 0
+              ? 0
+              : Math.log(Math.abs(distanceFromMiddle));
           positional +=
             (isUpperPiece ? -loggedValue : loggedValue) / TOTAL_PIECE_COUNT;
         }
