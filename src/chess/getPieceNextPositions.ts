@@ -1,4 +1,5 @@
-import { Board, Piece, Position } from "../types";
+import { Board, Piece } from "../types";
+import { Position } from "./types";
 import getCastleNextPositions from "./getCastlePositions";
 import getCannonNextPositions from "./getCannonNextPositions";
 import getGeneralNextPositions from "./getGeneralNextPositions";

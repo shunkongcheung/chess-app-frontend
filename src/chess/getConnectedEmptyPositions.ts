@@ -1,4 +1,5 @@
-import { Board, Position } from "../types";
+import { Board } from "../types";
+import { Position } from "./types";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
 import getIsPositionInBound from "./getIsPositionInBound";

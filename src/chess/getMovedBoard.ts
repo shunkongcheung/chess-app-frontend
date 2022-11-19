@@ -1,4 +1,5 @@
-import { Board, Piece, Position } from "../types";
+import { Piece, Board } from "../types";
+import { Position } from "./types";
 
 const getMovedBoard = (board: Board, from: Position, to: Position) => {
   const newBoard = JSON.parse(JSON.stringify(board));

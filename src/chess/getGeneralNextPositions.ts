@@ -1,5 +1,5 @@
-import { Piece } from "../types";
-import { Board, Position } from "../types";
+import { Board, Piece } from "../types";
+import { Position } from "./types";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
 import getIsPieceFriendly from "./getIsPieceFriendly";

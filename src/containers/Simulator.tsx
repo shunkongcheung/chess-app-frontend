@@ -3,7 +3,7 @@ import Link from "next/link";
 import styled from "styled-components";
 
 import { getBoardWinnerAndScore, getBoardFromHash } from "../chess";
-import { Board, Side, BoardNode } from "../types";
+import { Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
 import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";

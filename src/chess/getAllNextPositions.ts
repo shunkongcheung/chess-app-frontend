@@ -1,4 +1,5 @@
-import { Board, Move } from "../types";
+import { Board } from "../types";
+import { Move } from "./types";
 
 import getFriendlyPiecePositions from "./getFriendlyPiecePositions";
 import getPieceNextPositions from "./getPieceNextPositions";

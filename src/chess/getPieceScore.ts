@@ -4,8 +4,8 @@ const getPieceScore = (piecePrefix: string) => {
   const piecePrefixUpper = piecePrefix.toUpperCase() as Piece;
   const pieceScore = {
     [Piece.EMPTY]: 0,
-    [Piece.SOLDIER]: 1,
-    [Piece.JUMBO]: 3,
+    [Piece.SOLDIER]: 2,
+    [Piece.JUMBO]: 4,
     [Piece.KNIGHT]: 4,
     [Piece.CANNON]: 7,
     [Piece.HORSE]: 6,

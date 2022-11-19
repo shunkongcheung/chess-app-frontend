@@ -1,4 +1,5 @@
-import { Board, Position } from "../types";
+import { Board } from "../types";
+import { Position } from "./types";
 
 import getConnectedEmptyPositions from "./getConnectedEmptyPositions";
 import getIsPieceFriendly from "./getIsPieceFriendly";

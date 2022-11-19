@@ -1,4 +1,4 @@
-import { Position } from "../types";
+import { Position } from "./types";
 
 interface Args {
   left?: number;

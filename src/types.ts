@@ -11,17 +11,10 @@ export enum Piece {
   SOLDIER = "S",
 }
 
-export type Position = [number, number];
-
 export enum Side {
   Top = "top",
   Bottom = "bottom",
   None = "none",
-}
-
-export interface Move {
-  from: Position;
-  to: Position;
 }
 
 export interface BoardNode {

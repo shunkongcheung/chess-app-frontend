@@ -1,7 +1,8 @@
 import React, { memo, useCallback } from "react";
 import styled from "styled-components";
 
-import { Board, Position } from "../../types";
+import { Board } from "../../types";
+import { Position } from "../../chess/types";
 import ChessPiece from "./ChessPiece";
 
 interface IProps {
