@@ -6,7 +6,7 @@ import styled from "styled-components";
 
 import { BoardNode, Side } from "../types";
 import { Container, Card, ChessBoard, ScrollList } from "../components";
-import { getBoardWinnerAndScore } from "../chess";
+import { getBoardFromHash, getBoardWinnerAndScore } from "../chess";
 import { nodeSorter } from "../simulator";
 
 interface IProps {
@@ -50,6 +50,9 @@ const Checker = ({
         return 0;
       });
 
+  const currentBoard = getBoardFromHash(currentNode.boardHash);
+  const levelZeroBoard = getBoardFromHash(levelZeroNode.boardHash);
+
   return (
     <Container>
       <MainContent>
@@ -58,7 +61,7 @@ const Checker = ({
             descriptions={[
               {
                 title: "Score",
-                value: getBoardWinnerAndScore(levelZeroNode.board)[1],
+                value: getBoardWinnerAndScore(levelZeroBoard)[1],
               },
               {
                 title: "Is Open",
@@ -102,7 +105,7 @@ const Checker = ({
               },
             ]}
           >
-            <ChessBoard board={levelZeroNode.board} />
+            <ChessBoard board={levelZeroBoard} />
           </Card>
         </div>
         <div>
@@ -115,7 +118,7 @@ const Checker = ({
               },
               {
                 title: "Score",
-                value: getBoardWinnerAndScore(currentNode.board)[1],
+                value: getBoardWinnerAndScore(currentBoard)[1],
               },
               { title: "Winner", value: currentNode.winner },
               { title: "Level", value: currentNode.level },
@@ -128,7 +131,7 @@ const Checker = ({
               { title: "Child count", value: `${currentNode.children.length}` },
             ]}
           >
-            <ChessBoard board={currentNode.board} />
+            <ChessBoard board={currentBoard} />
           </Card>
         </div>
         <div>
@@ -158,7 +161,9 @@ const Checker = ({
             >
               <Link href={getUrl(currentNode.parent.index)}>
                 <a>
-                  <ChessBoard board={currentNode.parent.board} />
+                  <ChessBoard
+                    board={getBoardFromHash(currentNode.parent.boardHash)}
+                  />
                 </a>
               </Link>
             </Card>
@@ -187,7 +192,7 @@ const Checker = ({
               >
                 <Link href={getUrl(node.index)}>
                   <a>
-                    <ChessBoard board={node.board} />
+                    <ChessBoard board={getBoardFromHash(node.boardHash)} />
                   </a>
                 </Link>
               </Card>

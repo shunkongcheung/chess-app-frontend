@@ -57,7 +57,7 @@ export const storeOpenSet = async (
     recordId,
     index: networkNode.index,
     level: networkNode.level,
-    shortHash: getHashFromBoard(networkNode.board),
+    shortHash: networkNode.boardHash,
     content: JSON.stringify(networkNode),
   }));
 

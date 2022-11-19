@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import styled from "styled-components";
 
-import { getBoardWinnerAndScore, getHashFromBoard } from "../chess";
+import { getBoardWinnerAndScore, getBoardFromHash } from "../chess";
 import { Board, Side, BoardNode } from "../types";
 import { Card, ChessBoard, Container, ScrollList } from "../components";
 import { Payload, Result } from "../pages/api/simulate";
@@ -10,7 +10,7 @@ import { getOpenSetFromNetworkOpenSet } from "../utils/NetworkNode";
 import { useRouter } from "next/router";
 
 interface IProps {
-  board: Board;
+  boardHash: string;
   exportTimes: number;
   increment: number;
   toBeMovedBy: Side;
@@ -57,7 +57,7 @@ const fetchData = async (payload: Payload) => {
 };
 
 const Simulator = ({
-  board,
+  boardHash,
   increment,
   exportTimes,
   toBeMovedBy: levelZeroSide,
@@ -90,7 +90,7 @@ const Simulator = ({
       isOpenOnly: false,
       isSorted: false,
     });
-  }, [board]);
+  }, [boardHash]);
 
   const handleClick = useCallback(
     async (
@@ -104,7 +104,7 @@ const Simulator = ({
         pageNum,
         isOpenOnly,
         isSorted,
-        board,
+        boardHash,
         levelZeroSide,
         runTimes,
         isExport,
@@ -120,7 +120,7 @@ const Simulator = ({
         nextNodes: getOpenSetFromNetworkOpenSet(response.nextNodes),
       }));
     },
-    [levelZeroSide, board]
+    [levelZeroSide, boardHash]
   );
 
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
@@ -130,9 +130,8 @@ const Simulator = ({
   const isNextPageAvailable = state.pageNum < totalPage;
 
   const { query } = useRouter();
-  const getUrl = (board: Board, isSideSwitched = true) => {
+  const getUrl = (shortHash: string, isSideSwitched = true) => {
     const { side, exportTimes, increment } = query;
-    const shortHash = getHashFromBoard(board);
     const newSide = isSideSwitched
       ? side === Side.Top
         ? Side.Bottom
@@ -141,6 +140,7 @@ const Simulator = ({
     return `/simulate?side=${newSide}&exportTimes=${exportTimes}&increment=${increment}&shortHash=${shortHash}&`;
   };
 
+  const board = getBoardFromHash(boardHash);
   return (
     <MyContainer>
       <LeftColumn>
@@ -300,9 +300,11 @@ const Simulator = ({
                   },
                 ]}
               >
-                <Link href={getUrl(state.pointer.board)}>
+                <Link href={getUrl(state.pointer.boardHash)}>
                   <a>
-                    <ChessBoard board={state.pointer.board} />
+                    <ChessBoard
+                      board={getBoardFromHash(state.pointer.boardHash)}
+                    />
                   </a>
                 </Link>
               </Card>
@@ -329,9 +331,9 @@ const Simulator = ({
                   { title: "Is Terminated", value: `${node.isTerminated}` },
                 ]}
               >
-                <Link href={getUrl(node.board)}>
+                <Link href={getUrl(node.boardHash)}>
                   <a>
-                    <ChessBoard board={node.board} />
+                    <ChessBoard board={getBoardFromHash(node.boardHash)} />
                   </a>
                 </Link>
               </Card>
@@ -351,9 +353,9 @@ const Simulator = ({
                 { title: "Priority", value: node.priority },
               ]}
             >
-              <Link href={getUrl(node.board)}>
+              <Link href={getUrl(node.boardHash)}>
                 <a>
-                  <ChessBoard board={node.board} />
+                  <ChessBoard board={getBoardFromHash(node.boardHash)} />
                 </a>
               </Link>
             </Card>

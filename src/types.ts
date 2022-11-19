@@ -25,7 +25,7 @@ export interface Move {
 }
 
 export interface BoardNode {
-  board: Board;
+  boardHash: string;
   // order that the node is inserted
   index: number;
   // level 0: start board

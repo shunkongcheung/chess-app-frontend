@@ -1,6 +1,7 @@
 import { BoardNode, Side } from "../types";
 import {
   getAllNextPositions,
+  getBoardFromHash,
   getBoardWinnerAndScore,
   getHashFromBoard,
   getMovedBoard,
@@ -51,7 +52,7 @@ const run = async ({
   }
 
   const getKeyFromNode = (node: BoardNode) => {
-    const boardHash = getHashFromBoard(node.board);
+    const boardHash = node.boardHash;
     return `${boardHash}_${node.level % 2}`;
   };
 
@@ -108,9 +109,10 @@ const runHelper = ({
   const isPointerSideTop = pointerSide === Side.Top;
 
   if (!pointer.children.length) {
-    const nextMoves = getAllNextPositions(pointer.board, isPointerSideTop);
+    const pointerBoard = getBoardFromHash(pointer.boardHash);
+    const nextMoves = getAllNextPositions(pointerBoard, isPointerSideTop);
     const nextBoards = nextMoves.map(({ from, to }) =>
-      getMovedBoard(pointer.board, from, to)
+      getMovedBoard(pointerBoard, from, to)
     );
 
     const level = pointer.level + 1;
@@ -120,8 +122,9 @@ const runHelper = ({
     nextNodes = nextBoards
       .map((board) => {
         const [winner, score] = getBoardWinnerAndScore(board);
+        const boardHash = getHashFromBoard(board);
         const node: BoardNode = {
-          board,
+          boardHash,
           level,
           score,
           winner,

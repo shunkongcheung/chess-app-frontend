@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getBoardWinnerAndScore, getHashFromBoard } from "../../chess";
+import { getBoardWinnerAndScore, getBoardFromHash } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
 import { run } from "../../simulator";
 import DataStore from "../../simulator/DataStore";
-import { Side, Board, BoardNode } from "../../types";
+import { Side, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
 import {
   NetworkNode,
@@ -23,7 +23,7 @@ interface Params {
 
 export interface Payload extends Partial<Params> {
   levelZeroSide: Side;
-  board: Board;
+  boardHash: string;
 }
 
 export interface Result extends Params {
@@ -50,14 +50,15 @@ export default async function handler(
     isExport = false,
     runTimes = DEFAULT_RUN_TIMES,
     levelZeroSide,
-    board,
+    boardHash,
   } = payload;
   const startTime = performance.now();
+  const board = getBoardFromHash(boardHash);
   const [winner, score] = getBoardWinnerAndScore(board);
   let openSet: Array<BoardNode> = [
     {
       index: 0,
-      board,
+      boardHash,
       level: 0,
       score,
       winner,
@@ -69,7 +70,6 @@ export default async function handler(
     },
   ];
 
-  const boardHash = getHashFromBoard(board);
   let remainRunTimes = runTimes;
   // try {
   //   const existingData = await getOpenSetNetworkNodes(

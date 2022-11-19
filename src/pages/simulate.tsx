@@ -1,7 +1,6 @@
 import type { GetServerSidePropsContext, NextPage } from "next";
 import { Side } from "../types";
 
-import { getBoardFromHash } from "../chess";
 import Simulator from "../containers/Simulator";
 import {
   DEFAULT_INCREMENT,
@@ -9,10 +8,15 @@ import {
   DEFAULT_RUN_TIMES,
 } from "../constants";
 
-const Simulate: NextPage = ({ board, side, exportTimes, increment }: any) => {
+const Simulate: NextPage = ({
+  boardHash,
+  side,
+  exportTimes,
+  increment,
+}: any) => {
   return (
     <Simulator
-      board={board}
+      boardHash={boardHash}
       exportTimes={exportTimes}
       toBeMovedBy={side}
       increment={increment}
@@ -40,10 +44,9 @@ export const getServerSideProps = ({ query }: GetServerSidePropsContext) => {
     };
   }
 
-  const board = getBoardFromHash(fShortHash as string);
   return {
     props: {
-      board,
+      boardHash: fShortHash,
       side,
       increment: fIncrement,
       exportTimes: fExportTimes,
