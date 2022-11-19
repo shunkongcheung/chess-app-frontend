@@ -23,12 +23,10 @@ const getPieceScore = (piecePrefix: string, countState: BoardPieceCount) => {
   let cannonScore = SOLIDER_SCORE * MIDDLE_MULTIPLIER;
   let horseScore = SOLIDER_SCORE * MIDDLE_MULTIPLIER;
 
-  if (countState === BoardPieceCount.GteTwoThird) {
+  if (countState === BoardPieceCount.LtTwoThird) {
     cannonScore = SOLIDER_SCORE * TOP_MULTIPLIER;
-    horseScore = SOLIDER_SCORE * LOW_MULTIPLIER;
   }
   if (countState === BoardPieceCount.LtOneThird) {
-    cannonScore = SOLIDER_SCORE * LOW_MULTIPLIER;
     horseScore = SOLIDER_SCORE * TOP_MULTIPLIER;
   }
 
