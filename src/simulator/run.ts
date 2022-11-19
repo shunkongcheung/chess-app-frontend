@@ -7,7 +7,7 @@ import {
   getMovedBoard,
 } from "../chess";
 
-import getIsNodeTerminated from "./getIsNodeTerminated";
+// import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
 import DataStore, { LinkedListNode } from "./DataStore";
@@ -165,8 +165,9 @@ const runHelper = ({
   if (pointer.children.length) {
     const childrenPriorities = pointer.children.map((node) => node.priority);
     const newPriority = -Math.max(...childrenPriorities);
+    const isChanged = pointer.priority !== newPriority;
 
-    if (pointer.priority !== newPriority && !!pointer.parent) {
+    if (isChanged && !!pointer.parent) {
       // if my score has changed, parent needs to re-eveluate, force it to the
       // front such that it would be picked up on next iteration.
       pointer.parent.isOpenForCalculation = true;
@@ -180,8 +181,8 @@ const runHelper = ({
       });
     }
 
+
     pointer.priority = newPriority;
-    pointer.isTerminated = getIsNodeTerminated(pointer);
     openSetStore.update(pointer);
   }
 
