@@ -1,16 +1,41 @@
 import { Piece } from "../types";
+import { BoardPieceCount } from "./types";
 
-const getPieceScore = (piecePrefix: string) => {
+const SOLIDER_SCORE = 2;
+const LOW_MULTIPLIER = 2;
+const MIDDLE_MULTIPLIER = 4;
+const TOP_MULTIPLIER = 5;
+
+const PIECE_STANDARD_SCORES: Record<Piece, number> = {
+  [Piece.EMPTY]: 0,
+  [Piece.SOLDIER]: SOLIDER_SCORE,
+  [Piece.JUMBO]: SOLIDER_SCORE * LOW_MULTIPLIER,
+  [Piece.KNIGHT]: SOLIDER_SCORE * LOW_MULTIPLIER,
+  [Piece.CANNON]: SOLIDER_SCORE * MIDDLE_MULTIPLIER,
+  [Piece.HORSE]: SOLIDER_SCORE * MIDDLE_MULTIPLIER,
+  [Piece.CASTLE]: SOLIDER_SCORE * TOP_MULTIPLIER,
+  [Piece.GENERAL]: SOLIDER_SCORE, // doesnt matter
+};
+
+const getPieceScore = (piecePrefix: string, countState: BoardPieceCount) => {
   const piecePrefixUpper = piecePrefix.toUpperCase() as Piece;
+
+  let cannonScore = SOLIDER_SCORE * MIDDLE_MULTIPLIER;
+  let horseScore = SOLIDER_SCORE * MIDDLE_MULTIPLIER;
+
+  if (countState === BoardPieceCount.GteTwoThird) {
+    cannonScore = SOLIDER_SCORE * TOP_MULTIPLIER;
+    horseScore = SOLIDER_SCORE * LOW_MULTIPLIER;
+  }
+  if (countState === BoardPieceCount.LtOneThird) {
+    cannonScore = SOLIDER_SCORE * LOW_MULTIPLIER;
+    horseScore = SOLIDER_SCORE * TOP_MULTIPLIER;
+  }
+
   const pieceScore = {
-    [Piece.EMPTY]: 0,
-    [Piece.SOLDIER]: 2,
-    [Piece.JUMBO]: 4,
-    [Piece.KNIGHT]: 4,
-    [Piece.CANNON]: 7,
-    [Piece.HORSE]: 6,
-    [Piece.CASTLE]: 9,
-    [Piece.GENERAL]: 10,
+    ...PIECE_STANDARD_SCORES,
+    [Piece.CANNON]: cannonScore,
+    [Piece.HORSE]: horseScore,
   };
 
   const value = pieceScore[piecePrefixUpper];

@@ -140,12 +140,14 @@ export default async function handler(
       : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
-    levelOneNodes: resultSet.filter((node) => node.level === 1),
+    levelOneNodes: result.openSet
+      .filter((node) => node.level === 1)
+      .map(getNetworkNodeFromDataNode),
     timeTaken,
   };
 
   logger(
-    `finished. ${timeTaken}(ms)/${result.openSet.length}(nodes)/${remainRunTimes}(times)`
+    `finished. ${remainRunTimes}(times)/${timeTaken}(ms)/${result.openSet.length}(nodes)`
   );
 
   res.status(200).json(response);
