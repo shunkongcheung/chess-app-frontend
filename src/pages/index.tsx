@@ -6,7 +6,7 @@ const Index: NextPage = () => {
 
 export const getServerSideProps = () => {
   return {
-    redirect: { destination: "/simulate" },
+    redirect: { destination: "/playground" },
   };
 };
 
