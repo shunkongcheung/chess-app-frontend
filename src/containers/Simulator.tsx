@@ -312,7 +312,7 @@ const Simulator = ({
           </div>
         </MainContent>
         <ScrollList
-          columns={4}
+          columns={3}
           listItems={state.openSet.map((node) => {
             const selectedSide =
               node.level % 2 === 0 ? levelZeroSide : levelOneSide;
@@ -345,9 +345,11 @@ const Simulator = ({
         <ScrollList
           columns={1}
           listItems={state.levelOneNodes.map((node, index) => (
+          // listItems={state.nextNodes.map((node, index) => (
             <Card
               key={`NextNode-${index}`}
               descriptions={[
+                { title: "Index", value: node.index },
                 { title: "Level", value: node.level },
                 { title: "Score", value: node.score },
                 { title: "Priority", value: node.priority },
