@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBoardWinnerAndScore, getBoardFromHash } from "../../chess";
 import { DEFAULT_RUN_TIMES } from "../../constants";
-import { run } from "../../simulator";
+import { nodeSorter, run } from "../../simulator";
 import DataStore from "../../simulator/DataStore";
 import { Side, BoardNode } from "../../types";
 import { getLogger } from "../../utils/Logger";
@@ -139,7 +139,7 @@ export default async function handler(
       ? getNetworkNodeFromDataNode(result.pointer)
       : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
-    nextNodes: result.nextNodes.map(getNetworkNodeFromDataNode),
+    nextNodes: result.nextNodes.sort(nodeSorter).map(getNetworkNodeFromDataNode),
     levelOneNodes: result.openSet
       .filter((node) => node.level === 1)
       .map(getNetworkNodeFromDataNode),
