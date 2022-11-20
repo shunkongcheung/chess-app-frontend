@@ -12,6 +12,7 @@ import {
   getHashFromBoard,
 } from "../chess";
 import { NetworkNode } from "../utils/NetworkNode";
+import { choiceSorter } from "../simulator";
 
 interface IProps {
   side: Side;
@@ -55,14 +56,15 @@ const getPlaceholderBoardNodeFromBoard = (board: Board): NetworkNode => {
 const Playground = (props: IProps) => {
   const { side, board, nextBoards } = props;
   const [nextBoardNodes, setNextBoardNodes] = useState<Array<NetworkNode>>([]);
-  const [runTimes, setRunTimes] =  useState<number>(props.runTimes);
+  const [runTimes, setRunTimes] = useState<number>(props.runTimes);
+  const [isSorted, setIsSorted] = useState(true);
 
   useEffect(() => {
     setNextBoardNodes(nextBoards.map(getPlaceholderBoardNodeFromBoard));
   }, [nextBoards]);
 
   useEffect(() => {
-    setRunTimes(props.runTimes)
+    setRunTimes(props.runTimes);
   }, [props.runTimes]);
 
   const handleRun = useCallback(async () => {
@@ -83,18 +85,28 @@ const Playground = (props: IProps) => {
         <Card
           descriptions={[
             { title: "side", value: side },
-            { title: "Run #", 
-              value: <input value={runTimes}
-                type="number"
-                min="1"
-                onChange={evt => {
-                  evt.preventDefault();
-                  setRunTimes(Number(evt.target.value));
-
-                }} 
-              />
+            {
+              title: "Run #",
+              value: (
+                <input
+                  value={runTimes}
+                  type="number"
+                  min="1"
+                  onChange={(evt) => {
+                    evt.preventDefault();
+                    setRunTimes(Number(evt.target.value));
+                  }}
+                />
+              ),
             },
-            { title: "run", value: <button onClick={handleRun}>Run</button> },
+            {
+              title: (
+                <button
+                  onClick={() => setIsSorted((o) => !o)}
+                >{`sorted: ${isSorted}`}</button>
+              ),
+              value: <button onClick={handleRun}>Run</button>,
+            },
           ]}
         >
           <Link href={link}>
@@ -105,7 +117,10 @@ const Playground = (props: IProps) => {
         </Card>
       </div>
       <ScrollList
-        listItems={nextBoardNodes.map((boardNode) => (
+        listItems={(isSorted
+          ? [...nextBoardNodes].sort(choiceSorter(side))
+          : nextBoardNodes
+        ).map((boardNode) => (
           <Card
             key={boardNode.boardHash}
             descriptions={[
