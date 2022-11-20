@@ -1,4 +1,4 @@
-import { getAllNextPositions } from "../chess";
+import { getAllNextPositions, getBoardWinnerAndScore } from "../chess";
 import { Board, Piece, Side } from "../types";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
@@ -40,10 +40,19 @@ const getPriorityScore = ({
   const levelOneSide = levelZeroSide === Side.Top ? Side.Bottom : Side.Top;
   const nodeSide = level % 2 === 0 ? levelZeroSide : levelOneSide;
 
-  if (getIsCheckMate(board, nodeSide === Side.Top))
-    return -PSEUDO_HIGH_PRIORITY;
+  const [winner] = getBoardWinnerAndScore(board);
+  if (winner !== Side.None)
+    return winner === nodeSide ? -PSEUDO_HIGH_PRIORITY : PSEUDO_HIGH_PRIORITY;
 
-  if (getIsCheckMate(board, nodeSide !== Side.Top)) return PSEUDO_HIGH_PRIORITY;
+  // level = 2
+  // levelZeroSide = Top
+  // levelOneSide = Bottom
+  // nodeSide = Top
+  // isNodeSideUpper = true
+
+  const isNodeSideUpper = nodeSide === Side.Top;
+  if (getIsCheckMate(board, isNodeSideUpper)) return -PSEUDO_HIGH_PRIORITY;
+  if (getIsCheckMate(board, !isNodeSideUpper)) return PSEUDO_HIGH_PRIORITY;
 
   return nodeSide === Side.Top
     ? levelZeroScore - score
