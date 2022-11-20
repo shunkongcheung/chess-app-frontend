@@ -2,7 +2,7 @@ import type { GetServerSidePropsContext, NextPage } from "next";
 import { Side } from "../types";
 
 import Playground from "../containers/Playground";
-import { INITIAL_HASH } from "../constants";
+import { DEFAULT_RUN_TIMES, INITIAL_HASH } from "../constants";
 import { getAllNextPositions, getBoardFromHash, getMovedBoard } from "../chess";
 
 const Page: NextPage = ({ side, runTimes, board, nextBoards }: any) => {
@@ -22,10 +22,10 @@ export const getServerSideProps = async ({
   const { shortHash, side, runTimes } = query;
 
   const fSide = (side as Side) ?? Side.Bottom;
-  const fRunTimes = Number(runTimes ?? 0);
+  const fRunTimes = Number(runTimes ?? DEFAULT_RUN_TIMES);
   const fShortHash = (shortHash as string) ?? INITIAL_HASH;
 
-  let destination = `/check?`;
+  let destination = `/playground?`;
   destination += `side=${fSide}&`;
   destination += `runTimes=${fRunTimes}&`;
   destination += `shortHash=${fShortHash}&`;
