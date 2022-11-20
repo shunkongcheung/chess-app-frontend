@@ -7,7 +7,6 @@ import {
   getMovedBoard,
 } from "../chess";
 
-// import getIsNodeTerminated from "./getIsNodeTerminated";
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
 import DataStore, { LinkedListNode } from "./DataStore";
@@ -150,6 +149,7 @@ const runHelper = ({
           index: -1,
           parent: pointer,
           priority: getPriorityScore({
+            board,
             level,
             score,
             levelZeroSide,
