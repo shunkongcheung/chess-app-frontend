@@ -12,8 +12,11 @@ import nodeSorter from "./nodeSorter";
 import DataStore, { LinkedListNode } from "./DataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
+type CallbackRet = void | boolean;
+
 interface Args {
   callbackInterval?: number;
+  isAutoHandleL1: boolean;
   levelZeroScore: number;
   levelZeroSide: Side;
   openSet: Array<BoardNode>;
@@ -21,7 +24,7 @@ interface Args {
     runIdx: number,
     dataStore: DataStore<BoardNode>,
     rest: Omit<Ret, "openSet">
-  ) => any;
+  ) => CallbackRet | Promise<CallbackRet>;
   runTimes: number;
 }
 
@@ -31,7 +34,8 @@ interface Ret {
   nextNodes: Array<BoardNode>; // debug only
 }
 
-interface InternalArgs extends Omit<Args, "openSet" | "runTimes"> {
+interface InternalArgs
+  extends Omit<Args, "openSet" | "runTimes" | "isAutoHandleL1"> {
   openSetStore: DataStore<BoardNode>;
 }
 
@@ -40,6 +44,7 @@ interface InternalRet extends Omit<Ret, "openSet"> {
 }
 
 const run = async ({
+  isAutoHandleL1,
   callbackInterval = 1000,
   onIntervalCallback,
   openSet,
@@ -85,15 +90,15 @@ const run = async ({
 
     if (onIntervalCallback && idx % callbackInterval === 0) {
       const { openSetStore: debugStore, ...rest } = ret;
-      await onIntervalCallback(idx, debugStore, rest);
+      const finish = await onIntervalCallback(idx, debugStore, rest);
+      if (finish) break;
     }
   }
 
   // before returning, ensure no level 1 node is at PSEUDO_HIGH_PRIORITY
-  // const finalPointer = getPointer(openSetStore.head);
-  // if(finalPointer && finalPointer.level === 1 && finalPointer.priority === PSEUDO_HIGH_PRIORITY) {
-  //   ret = runHelper({ ...args, openSetStore: ret.openSetStore });
-  // }
+  while (isAutoHandleL1 && getIsL1InPseudoPriority(ret.openSetStore.head)) {
+    ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+  }
 
   const { openSetStore: retOpenSetStore, ...rest } = ret;
   return { ...rest, openSet: retOpenSetStore.asArray() };
@@ -105,6 +110,19 @@ const getPointer = (head: LinkedListNode<BoardNode>): BoardNode | undefined => {
       return head.node;
     if (head.next) head = head.next;
     else return undefined;
+  }
+};
+
+const getIsL1InPseudoPriority = (head: LinkedListNode<BoardNode>): boolean => {
+  while (true) {
+    const { node } = head;
+    const isL1 = node.level === 1;
+    const isPseudoPriority =
+      !node.isTerminated && node.priority === PSEUDO_HIGH_PRIORITY;
+    if (isL1 && isPseudoPriority) return true;
+
+    if (head.next) head = head.next;
+    else return false;
   }
 };
 
