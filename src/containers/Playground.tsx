@@ -21,11 +21,25 @@ interface IProps {
   nextBoards: Array<Board>;
 }
 
+interface IState {
+  nextBoardNodes: Array<NetworkNode>;
+  runTimes: number;
+  status: "loading" | "failed" | "completed";
+  isSorted: boolean;
+  actualRunTimes: number;
+  actualTimeTaken: number;
+}
+
 const MyContainer = styled(Container)`
   display: grid;
   grid-template-columns: 4fr 2fr;
   gap: 20px;
   height: 95vh;
+`;
+
+const Banner = styled.div`
+  color: #d33;
+  font-weight: bold;
 `;
 
 const fetchData = async (payload: Payload) => {
@@ -53,17 +67,10 @@ const getPlaceholderBoardNodeFromBoard = (board: Board): NetworkNode => {
   };
 };
 
-interface IState {
-  nextBoardNodes: Array<NetworkNode>;
-  runTimes: number;
-  isSorted: boolean;
-  actualRunTimes: number;
-  actualTimeTaken: number;
-}
-
 const Playground = (props: IProps) => {
   const { side, board, nextBoards } = props;
   const [state, setState] = useState<IState>({
+    status: "completed",
     nextBoardNodes: [],
     runTimes: props.runTimes,
     isSorted: true,
@@ -86,32 +93,53 @@ const Playground = (props: IProps) => {
   }, [props.runTimes]);
 
   const handleRun = useCallback(async () => {
-    const response = await fetchData({
-      boardHash: getHashFromBoard(board),
-      levelZeroSide: side,
-      runTimes: state.runTimes,
-    });
-    setState((old) => ({
-      ...old,
-      actualRunTimes: response.runTimes,
-      actualTimeTaken: response.timeTaken,
-      nextBoardNodes: response.levelOneNodes,
-    }));
+    try {
+      setState((old) => ({ ...old, status: "loading" }));
+      const response = await fetchData({
+        boardHash: getHashFromBoard(board),
+        levelZeroSide: side,
+        runTimes: state.runTimes,
+      });
+      setState((old) => ({
+        ...old,
+        actualRunTimes: response.runTimes,
+        actualTimeTaken: response.timeTaken,
+        nextBoardNodes: response.levelOneNodes,
+        status: "completed",
+      }));
+    } catch {
+      setState((old) => ({ ...old, status: "failed" }));
+    }
   }, [side, board, state.runTimes]);
 
   const nextSide = side === Side.Top ? Side.Bottom : Side.Top;
   const shortHash = getHashFromBoard(board);
   const link = `/simulate?side=${side}&exportTimes=${props.runTimes}&shortHash=${shortHash}`;
+  const disabled = state.status !== "completed";
   return (
     <MyContainer>
       <div>
         <Card
           descriptions={[
+            ...(state.status === "failed"
+              ? [
+                  {
+                    title: (
+                      <Banner>
+                        Failed. Try adjusting runTimes to{" "}
+                        {Math.ceil(state.runTimes / 2)}
+                      </Banner>
+                    ),
+                    value: "",
+                  },
+                ]
+              : []),
             { title: "side", value: side },
             {
               title: "Run #",
               value: (
                 <input
+                  disabled={disabled}
                   value={state.runTimes}
                   type="number"
                   min="1"
@@ -133,12 +161,17 @@ const Playground = (props: IProps) => {
             {
               title: (
                 <button
+                  disabled={disabled}
                   onClick={() =>
                     setState((old) => ({ ...old, isSorted: !old.isSorted }))
                   }
                 >{`sorted: ${state.isSorted}`}</button>
               ),
-              value: <button onClick={handleRun}>Run</button>,
+              value: (
+                <button onClick={handleRun} disabled={disabled}>
+                  {state.status === "loading" ? "loading..." : "Run"}
+                </button>
+              ),
             },
           ]}
         >
