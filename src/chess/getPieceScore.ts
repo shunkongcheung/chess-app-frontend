@@ -4,7 +4,7 @@ import { BoardPieceCount } from "./types";
 const SOLIDER_SCORE = 2;
 const LOW_MULTIPLIER = 2;
 const MIDDLE_MULTIPLIER = 4;
-const TOP_MULTIPLIER = 5;
+const TOP_MULTIPLIER = 6;
 
 const PIECE_STANDARD_SCORES: Record<Piece, number> = {
   [Piece.EMPTY]: 0,
