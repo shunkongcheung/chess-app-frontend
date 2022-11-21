@@ -106,7 +106,7 @@ export default async function handler(
 
     prevIndexes = levelOneNodeIndexes;
 
-    return isFinished;
+    return !isExport && isFinished;
   };
 
   const currentTime = Math.round(performance.now() - startTime);
@@ -117,6 +117,7 @@ export default async function handler(
     levelZeroSide,
     openSet,
     runTimes: remainRunTimes,
+    callbackInterval: Math.floor(remainRunTimes / 5),
     onIntervalCallback,
   });
 
