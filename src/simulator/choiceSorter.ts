@@ -7,18 +7,18 @@ interface SortNode {
 }
 
 const choiceSorter = (side: Side) => (left: SortNode, right: SortNode) => {
-  const PRIORITY_MIN_DIFF = 0.5;
-  if (left.priority > right.priority + PRIORITY_MIN_DIFF) return -1;
-  if (left.priority + PRIORITY_MIN_DIFF < right.priority) return 1;
+  if (Math.round(left.priority) > Math.round(right.priority)) return -1;
+  if (Math.round(left.priority) < Math.round(right.priority)) return 1;
 
   if (side === Side.Top) {
-    if (left.score > right.score + PRIORITY_MIN_DIFF) return -1;
-    if (left.score + PRIORITY_MIN_DIFF < right.score) return 1;
+    if (Math.round(left.score) > Math.round(right.score)) return -1;
+    if (Math.round(left.score) < Math.round(right.score)) return 1;
   }
   if (side === Side.Bottom) {
-    if (left.score < right.score + PRIORITY_MIN_DIFF) return -1;
-    if (left.score + PRIORITY_MIN_DIFF > right.score) return 1;
+    if (Math.round(left.score) < Math.round(right.score)) return -1;
+    if (Math.round(left.score) > Math.round(right.score)) return 1;
   }
+
   return 0;
 };
 
