@@ -91,13 +91,17 @@ const run = async ({
     if (onIntervalCallback && idx % callbackInterval === 0) {
       const { openSetStore: debugStore, ...rest } = ret;
       const finish = await onIntervalCallback(idx, debugStore, rest);
-      if (finish) break;
+      if (finish) {
+        runTimes = idx;
+        break;
+      }
     }
   }
 
   // before returning, ensure no level 1 node is at PSEUDO_HIGH_PRIORITY
   while (isAutoHandleL1 && getIsL1InPseudoPriority(ret.openSetStore.head)) {
     ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+    runTimes++;
   }
 
   const { openSetStore: retOpenSetStore, ...rest } = ret;
