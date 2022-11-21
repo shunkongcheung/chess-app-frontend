@@ -71,6 +71,7 @@ const Simulator = ({
     timeTaken: 0,
     pageNum: 1,
     pageSize: 1,
+    isAutoHandleL1: true,
     isExport: false,
     isOpenOnly: false,
     isSorted: true,
@@ -86,6 +87,7 @@ const Simulator = ({
       timeTaken: 0,
       pageNum: 1,
       pageSize: 1,
+      isAutoHandleL1: true,
       isExport: false,
       isOpenOnly: false,
       isSorted: true,
@@ -98,6 +100,7 @@ const Simulator = ({
       isOpenOnly: boolean,
       isSorted: boolean,
       runTimes: number,
+      isAutoHandleL1 = true,
       isExport = false
     ) => {
       const response = await fetchData({
@@ -107,6 +110,7 @@ const Simulator = ({
         boardHash,
         levelZeroSide,
         runTimes,
+        isAutoHandleL1,
         isExport,
       });
       const newOpenSet = getOpenSetFromNetworkOpenSet(response.openSet);
@@ -242,7 +246,8 @@ const Simulator = ({
                   title: (
                     <button
                       onClick={useCallback(
-                        () => handleClick(1, false, false, exportTimes, true),
+                        () =>
+                          handleClick(1, false, false, exportTimes, true, true),
                         [handleClick, exportTimes]
                       )}
                     >
@@ -259,7 +264,8 @@ const Simulator = ({
                               old.pageNum,
                               old.isOpenOnly,
                               old.isSorted,
-                              old.runTimes + increment
+                              old.runTimes + increment,
+                              false
                             );
                             return old;
                           }),
