@@ -73,7 +73,7 @@ const Simulator = ({
     pageSize: 1,
     isExport: false,
     isOpenOnly: false,
-    isSorted: false,
+    isSorted: true,
   });
 
   useEffect(() => {
@@ -88,7 +88,7 @@ const Simulator = ({
       pageSize: 1,
       isExport: false,
       isOpenOnly: false,
-      isSorted: false,
+      isSorted: true,
     });
   }, [boardHash]);
 
@@ -344,8 +344,8 @@ const Simulator = ({
       <SecondaryContainer>
         <ScrollList
           columns={1}
-          listItems={state.levelOneNodes.map((node, index) => (
-          // listItems={state.nextNodes.map((node, index) => (
+          // listItems={state.levelOneNodes.map((node, index) => (
+          listItems={state.nextNodes.map((node, index) => (
             <Card
               key={`NextNode-${index}`}
               descriptions={[
