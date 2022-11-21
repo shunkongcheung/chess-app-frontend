@@ -70,8 +70,6 @@ const Playground = (props: IProps) => {
     actualRunTimes: -1,
     actualTimeTaken: -1,
   });
-  const [runTimes, setRunTimes] = useState<number>(props.runTimes);
-  const [isSorted, setIsSorted] = useState(true);
 
   useEffect(() => {
     setState((old) => ({
@@ -81,14 +79,17 @@ const Playground = (props: IProps) => {
   }, [nextBoards]);
 
   useEffect(() => {
-    setRunTimes(props.runTimes);
+    setState((old) => ({
+      ...old,
+      runTimes: props.runTimes,
+    }));
   }, [props.runTimes]);
 
   const handleRun = useCallback(async () => {
     const response = await fetchData({
       boardHash: getHashFromBoard(board),
       levelZeroSide: side,
-      runTimes,
+      runTimes: state.runTimes,
     });
     setState((old) => ({
       ...old,
@@ -96,11 +97,11 @@ const Playground = (props: IProps) => {
       actualTimeTaken: response.timeTaken,
       nextBoardNodes: response.levelOneNodes,
     }));
-  }, [side, board, runTimes]);
+  }, [side, board, state.runTimes]);
 
   const nextSide = side === Side.Top ? Side.Bottom : Side.Top;
   const shortHash = getHashFromBoard(board);
-  const link = `/simulate?side=${side}&exportTimes=${runTimes}&shortHash=${shortHash}`;
+  const link = `/simulate?side=${side}&exportTimes=${props.runTimes}&shortHash=${shortHash}`;
   return (
     <MyContainer>
       <div>
@@ -111,7 +112,7 @@ const Playground = (props: IProps) => {
               title: "Run #",
               value: (
                 <input
-                  value={runTimes}
+                  value={state.runTimes}
                   type="number"
                   min="1"
                   onChange={(evt) => {
@@ -132,8 +133,10 @@ const Playground = (props: IProps) => {
             {
               title: (
                 <button
-                  onClick={() => setIsSorted((o) => !o)}
-                >{`sorted: ${isSorted}`}</button>
+                  onClick={() =>
+                    setState((old) => ({ ...old, isSorted: !old.isSorted }))
+                  }
+                >{`sorted: ${state.isSorted}`}</button>
               ),
               value: <button onClick={handleRun}>Run</button>,
             },
@@ -147,7 +150,7 @@ const Playground = (props: IProps) => {
         </Card>
       </div>
       <ScrollList
-        listItems={(isSorted
+        listItems={(state.isSorted
           ? [...state.nextBoardNodes].sort(choiceSorter(side))
           : state.nextBoardNodes
         ).map((boardNode) => (
@@ -161,7 +164,7 @@ const Playground = (props: IProps) => {
             ]}
           >
             <Link
-              href={`/playground?side=${nextSide}&runTimes=${runTimes}&shortHash=${boardNode.boardHash}`}
+              href={`/playground?side=${nextSide}&runTimes=${state.runTimes}&shortHash=${boardNode.boardHash}`}
             >
               <a>
                 <ChessBoard board={getBoardFromHash(boardNode.boardHash)} />
