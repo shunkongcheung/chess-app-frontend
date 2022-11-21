@@ -53,14 +53,31 @@ const getPlaceholderBoardNodeFromBoard = (board: Board): NetworkNode => {
   };
 };
 
+interface IState {
+  nextBoardNodes: Array<NetworkNode>;
+  runTimes: number;
+  isSorted: boolean;
+  actualRunTimes: number;
+  actualTimeTaken: number;
+}
+
 const Playground = (props: IProps) => {
   const { side, board, nextBoards } = props;
-  const [nextBoardNodes, setNextBoardNodes] = useState<Array<NetworkNode>>([]);
+  const [state, setState] = useState<IState>({
+    nextBoardNodes: [],
+    runTimes: props.runTimes,
+    isSorted: true,
+    actualRunTimes: -1,
+    actualTimeTaken: -1,
+  });
   const [runTimes, setRunTimes] = useState<number>(props.runTimes);
   const [isSorted, setIsSorted] = useState(true);
 
   useEffect(() => {
-    setNextBoardNodes(nextBoards.map(getPlaceholderBoardNodeFromBoard));
+    setState((old) => ({
+      ...old,
+      nextBoardNodes: nextBoards.map(getPlaceholderBoardNodeFromBoard),
+    }));
   }, [nextBoards]);
 
   useEffect(() => {
@@ -73,7 +90,12 @@ const Playground = (props: IProps) => {
       levelZeroSide: side,
       runTimes,
     });
-    setNextBoardNodes(response.levelOneNodes);
+    setState((old) => ({
+      ...old,
+      actualRunTimes: response.runTimes,
+      actualTimeTaken: response.timeTaken,
+      nextBoardNodes: response.levelOneNodes,
+    }));
   }, [side, board, runTimes]);
 
   const nextSide = side === Side.Top ? Side.Bottom : Side.Top;
@@ -94,11 +116,19 @@ const Playground = (props: IProps) => {
                   min="1"
                   onChange={(evt) => {
                     evt.preventDefault();
-                    setRunTimes(Number(evt.target.value));
+                    setState((old) => ({
+                      ...old,
+                      runTimes: Number(evt.target.value),
+                    }));
                   }}
                 />
               ),
             },
+            {
+              title: "Actual time Taken",
+              value: `${Math.round(state.actualTimeTaken / 1000)}(s)`,
+            },
+            { title: "Actual run #", value: state.actualRunTimes },
             {
               title: (
                 <button
@@ -118,8 +148,8 @@ const Playground = (props: IProps) => {
       </div>
       <ScrollList
         listItems={(isSorted
-          ? [...nextBoardNodes].sort(choiceSorter(side))
-          : nextBoardNodes
+          ? [...state.nextBoardNodes].sort(choiceSorter(side))
+          : state.nextBoardNodes
         ).map((boardNode) => (
           <Card
             key={boardNode.boardHash}
