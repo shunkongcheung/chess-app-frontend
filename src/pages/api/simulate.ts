@@ -15,6 +15,7 @@ import { storeOpenSet } from "../../database/storeOpenSet";
 interface Params {
   pageNum: number;
   pageSize: number;
+  isAutoHandleL1: boolean;
   isSorted: boolean;
   isOpenOnly: boolean;
   isExport: boolean;
@@ -45,6 +46,7 @@ export default async function handler(
   const {
     pageNum = 1,
     pageSize = 50,
+    isAutoHandleL1 = true,
     isSorted = false,
     isOpenOnly = false,
     isExport = false,
@@ -71,39 +73,46 @@ export default async function handler(
   ];
 
   let remainRunTimes = runTimes;
-  // try {
-  //   const existingData = await getOpenSetNetworkNodes(
-  //     levelZeroSide,
-  //     boardHash,
-  //     remainRunTimes
-  //   );
-  //   logger(`Exists. ${existingData.runTimes}/${remainRunTimes}`);
-
-  //   if (existingData.runTimes <= remainRunTimes) {
-  //     remainRunTimes -= existingData.runTimes;
-  //     openSet = getOpenSetFromNetworkOpenSet(existingData.networkNodes);
-  //     const currentTime = Math.round(performance.now() - startTime);
-  //     logger(`Generated. ${currentTime}`);
-  //   }
-  // } catch {}
-
   const levelZeroNode = openSet.find((item) => item.level === 0)!;
 
+  let prevIndexes: Array<number> = [];
   const onIntervalCallback = async (
     idx: number,
     store: DataStore<BoardNode>
   ) => {
+    const openSet = store.asArray();
+    const COMPARE_COUNT = 5;
     if (isExport) {
-      const openSet = store.asArray();
       await storeOpenSet(levelZeroSide, boardHash, openSet, runTimes);
     }
+
     const currentTime = Math.round(performance.now() - startTime);
-    logger(
-      `Running. ${idx}/${remainRunTimes}. ${currentTime}(ms)/${store.length}(nodes)`
-    );
+    const levelOneNodeIndexes = openSet
+      .filter((boardNode) => boardNode.level === 1)
+      .map((boardNode) => boardNode.index);
+
+    const levelOneNodeIdxJoin = levelOneNodeIndexes.join(",");
+    const msg = `${idx}/${remainRunTimes}. ${currentTime}(ms)/${store.length}(nodes): ${levelOneNodeIdxJoin}`;
+    logger(msg);
+
+    const isFinished =
+      !!prevIndexes.length &&
+      levelOneNodeIndexes
+        .slice(0, COMPARE_COUNT)
+        .reduce(
+          (prev, curr, index) => prev && curr === prevIndexes[index],
+          true
+        );
+
+    prevIndexes = levelOneNodeIndexes;
+
+    return isFinished;
   };
 
+  const currentTime = Math.round(performance.now() - startTime);
+  logger(`${remainRunTimes}. ${currentTime}(ms)`);
   let result = await run({
+    isAutoHandleL1,
     levelZeroScore: levelZeroNode.score,
     levelZeroSide,
     openSet,
@@ -130,6 +139,7 @@ export default async function handler(
   const response: Result = {
     pageNum,
     pageSize,
+    isAutoHandleL1,
     isSorted,
     isOpenOnly,
     isExport,
@@ -139,15 +149,22 @@ export default async function handler(
       ? getNetworkNodeFromDataNode(result.pointer)
       : undefined,
     openSet: resultSet.slice((pageNum - 1) * pageSize, pageNum * pageSize),
-    nextNodes: result.nextNodes.sort(nodeSorter).map(getNetworkNodeFromDataNode),
+    nextNodes: result.nextNodes
+      .sort(nodeSorter)
+      .map(getNetworkNodeFromDataNode),
     levelOneNodes: result.openSet
       .filter((node) => node.level === 1)
       .map(getNetworkNodeFromDataNode),
     timeTaken,
   };
 
+  const levelOneNodeIndexes = result.openSet
+    .filter((node) => node.level === 1)
+    .map((boardNode) => boardNode.index)
+    .join(", ");
+
   logger(
-    `finished. ${remainRunTimes}(times)/${timeTaken}(ms)/${result.openSet.length}(nodes)`
+    `finished. ${remainRunTimes}(times)/${timeTaken}(ms)/${result.openSet.length}(nodes). ${levelOneNodeIndexes}`
   );
 
   res.status(200).json(response);
