@@ -83,32 +83,61 @@ class DataStore<T> {
     const linkedListNode: LinkedListNode<T> = { node };
     const key = this._getKeyFromNode(node);
     this._hashMap.set(key, linkedListNode);
-    // this._hashMap[key] = linkedListNode;
-    this._count += 1;
 
     if (this._sorter(node, this._head.node) <= 0) {
+      this._count += 1;
       linkedListNode.next = this._head;
       this._head.prev = linkedListNode;
       this._head = linkedListNode;
       return linkedListNode.node;
     }
 
+    let [left, right] = [0, this._count];
+    let mid = Math.ceil((left + right) / 2);
+
     let pointer = this._head;
-    while (pointer.next && this._sorter(node, pointer.node) > 0) {
+    for(let idx = 0; idx < mid; idx ++) {
+      if(!pointer.next) throw Error(logFormatter(`next is undefined ${idx}, ${mid}, ${this._count}`));
       pointer = pointer.next;
     }
 
-    if (this._sorter(node, pointer.node) > 0) {
-      pointer.next = linkedListNode;
-      linkedListNode.prev = pointer;
-    } else {
-      linkedListNode.prev = pointer.prev;
-      linkedListNode.next = pointer;
+    while (true) {
+      const prevMid = mid;
+      const compare = this._sorter(node, pointer.node);
+      if(compare > 0) {
+        left = mid;
+        if(left === (right - 1)) {
+          // larger than the largest node in list
+          pointer.next = linkedListNode;
+          linkedListNode.prev = pointer;
+          break;
+        }
+      } else {
+        // check if previous is smaller
+        if(!pointer.prev) throw Error(logFormatter("prev is undefined"));
 
-      if (!pointer.prev) throw Error(logFormatter("prev is undefined"));
-      pointer.prev.next = linkedListNode;
-      pointer.prev = linkedListNode;
+        if(this._sorter(node, pointer.prev.node) > 0) {
+          linkedListNode.prev = pointer.prev;
+          linkedListNode.next = pointer;
+
+          pointer.prev.next = linkedListNode;
+          pointer.prev = linkedListNode;
+          break;
+        } else {
+          right = mid;
+        }
+      }
+
+      mid = Math.ceil((left + right) / 2);
+
+      const diff = Math.abs(prevMid - mid);
+      for(let idx = 0; idx < diff; idx ++){
+        if(prevMid > mid) pointer = pointer.prev!;
+        else pointer = pointer.next!;
+      }
     }
+
+    this._count += 1;
 
     return linkedListNode.node;
   }
