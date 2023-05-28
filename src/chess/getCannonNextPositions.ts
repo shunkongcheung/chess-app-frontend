@@ -37,7 +37,7 @@ const getCannonNextPositions = (
     tip = [tip[0] + direction[0], tip[1] + direction[1]];
 
     /// if cannon target opponent.
-    nextMoves.join(getCannonTarget(board, curPiece, direction, tip));
+    nextMoves.join(getCannonTarget(board, curPiece, direction, piecePosition, tip));
   });
   return nextMoves;
 };
@@ -46,6 +46,7 @@ const getCannonTarget = (
   board: Board,
   oriPiece: string,
   dir: Position,
+  from: Position,
   tip: Position
 ): PositionStore => {
   const store = new PositionStore();
@@ -55,7 +56,7 @@ const getCannonTarget = (
     const curPiece = board[curPos[0]][curPos[1]];
     if (getIsPieceFriendly(oriPiece, curPiece)) break;
     if (getIsPieceOpponent(oriPiece, curPiece)) {
-      store.insert({ from: tip, to: curPos });
+      store.insert({ from, to: curPos });
       break;
     }
 
