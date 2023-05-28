@@ -1,5 +1,6 @@
 import { Board } from "../types";
 import { Move } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getFriendlyPiecePositions from "./getFriendlyPiecePositions";
 import getPieceNextPositions from "./getPieceNextPositions";
@@ -10,17 +11,10 @@ const getAllNextPositions = (
 ): Array<Move> => {
   const positions = getFriendlyPiecePositions(board, isUpperSide);
 
-  let nextMoves: Array<Move> = [];
-  positions.map((position) => {
-    nextMoves = [
-      ...nextMoves,
-      ...getPieceNextPositions(board, position).map((to) => ({
-        from: position,
-        to,
-      })),
-    ];
-  });
-  return nextMoves;
+  const nextMoves = new PositionStore();
+  positions.forEach((position) => nextMoves.join(getPieceNextPositions(board, position)));
+  
+  return nextMoves.asArray();
 };
 
 export default getAllNextPositions;

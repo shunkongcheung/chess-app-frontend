@@ -1,5 +1,6 @@
 import { Board } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getConnectedEmptyPositions from "./getConnectedEmptyPositions";
 import getIsPieceFriendly from "./getIsPieceFriendly";
@@ -9,17 +10,16 @@ import getIsPositionInBound from "./getIsPositionInBound";
 const getCannonNextPositions = (
   board: Board,
   piecePosition: Position
-): Array<Position> => {
-  const [left, right, top, bottom]: Array<Position> = [
+): PositionStore => {
+  const directions: Array<Position> = [
     [0, -1],
     [0, 1],
     [-1, 0],
     [1, 0],
   ];
-  const directions = [left, right, top, bottom];
   const curPiece = board[piecePosition[0]][piecePosition[1]];
 
-  let nextMoves: Array<Position> = [];
+  const nextMoves = new PositionStore();
   directions.map((direction) => {
     // all empty positions
     const emptyPositions = getConnectedEmptyPositions(
@@ -27,20 +27,17 @@ const getCannonNextPositions = (
       piecePosition,
       direction
     );
-    nextMoves = [...nextMoves, ...emptyPositions];
+    nextMoves.join(emptyPositions);
 
     // get tip of this direction
     let tip =
-      emptyPositions.length > 0
-        ? emptyPositions[emptyPositions.length - 1]
+      emptyPositions.end 
+        ? emptyPositions.end.to
         : piecePosition;
     tip = [tip[0] + direction[0], tip[1] + direction[1]];
 
     /// if cannon target opponent.
-    nextMoves = [
-      ...nextMoves,
-      ...getCannonTarget(board, curPiece, direction, tip),
-    ];
+    nextMoves.join(getCannonTarget(board, curPiece, direction, tip));
   });
   return nextMoves;
 };
@@ -50,18 +47,22 @@ const getCannonTarget = (
   oriPiece: string,
   dir: Position,
   tip: Position
-): Array<Position> => {
+): PositionStore => {
+  const store = new PositionStore();
   let curPos: Position = [tip[0] + dir[0], tip[1] + dir[1]];
 
   while (getIsPositionInBound(curPos)) {
     const curPiece = board[curPos[0]][curPos[1]];
     if (getIsPieceFriendly(oriPiece, curPiece)) break;
-    if (getIsPieceOpponent(oriPiece, curPiece)) return [curPos];
+    if (getIsPieceOpponent(oriPiece, curPiece)) {
+      store.insert({ from: tip, to: curPos });
+      break;
+    }
 
     curPos = [curPos[0] + dir[0], curPos[1] + dir[1]];
   }
 
-  return [];
+  return store;
 };
 
 export default getCannonNextPositions;

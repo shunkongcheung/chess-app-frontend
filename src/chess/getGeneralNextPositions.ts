@@ -1,5 +1,6 @@
 import { Board, Piece } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
 import getIsPieceFriendly from "./getIsPieceFriendly";
@@ -8,17 +9,16 @@ import getIsPositionInBound from "./getIsPositionInBound";
 const getGeneralNextPositions = (
   board: Board,
   piecePosition: Position
-): Array<Position> => {
-  const [left, right, top, bottom]: Array<Position> = [
+): PositionStore => {
+  const directions: Array<Position> = [
     [0, -1],
     [0, 1],
     [-1, 0],
     [1, 0],
   ];
-  const directions = [left, right, top, bottom];
   const curPiece = board[piecePosition[0]][piecePosition[1]];
 
-  let nextMoves: Array<Position> = [];
+  const nextMoves = new PositionStore();
   directions.map((direction) => {
     const nextPos: Position = [
       piecePosition[0] + direction[0],
@@ -27,17 +27,19 @@ const getGeneralNextPositions = (
     const isInBound = getGeneralInBound(curPiece, nextPos);
     if (isInBound) {
       const nextPiece = board[nextPos[0]][nextPos[1]];
-      if (!getIsPieceFriendly(curPiece, nextPiece)) nextMoves.push(nextPos);
+      if (!getIsPieceFriendly(curPiece, nextPiece)) nextMoves.insert({ from: piecePosition, to: nextPos });
     }
   });
 
-  return [...nextMoves, ...getGeneralFlyPosition(board, piecePosition)];
+  nextMoves.join(getGeneralFlyPosition(board, piecePosition));
+  return nextMoves;
 };
 
 const getGeneralFlyPosition = (
   board: Board,
   piecePosition: Position
-): Array<Position> => {
+): PositionStore => {
+  const store = new PositionStore();
   const curPiece = board[piecePosition[0]][piecePosition[1]];
   const rowStep = isUpper(curPiece) ? 1 : -1;
 
@@ -50,17 +52,18 @@ const getGeneralFlyPosition = (
     curPos = [curPos[0] + rowStep, curPos[1]];
   }
 
-  if (!getIsPositionInBound(curPos)) return [];
+  if (!getIsPositionInBound(curPos)) return store;
 
   // must hit another general
   if (board[curPos[0]][curPos[1]].toUpperCase() !== Piece.GENERAL.toUpperCase())
-    return [];
+    return store;
 
   // must hit the opponent's general
-  if (isUpper(board[curPos[0]][curPos[1]]) === isUpper(curPiece)) return [];
+  if (isUpper(board[curPos[0]][curPos[1]]) === isUpper(curPiece)) return store;
 
   // fly to opponent's general
-  return [curPos];
+  store.insert({ from: piecePosition, to: curPos });
+  return store;
 };
 
 export const getGeneralInBound = (

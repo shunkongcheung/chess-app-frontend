@@ -1,5 +1,6 @@
 import { Board } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
 import getIsPositionInBound from "./getIsPositionInBound";
@@ -10,25 +11,28 @@ const getConnectedEmptyPositions = (
   board: Board,
   curPosition: Position,
   direction: Direction
-): Array<Position> => {
+): PositionStore => {
+
   let nextPosition: Position = [
     curPosition[0] + direction[0],
     curPosition[1] + direction[1],
   ];
-  const emptyPositions: Array<Position> = [];
+
+  const store = new PositionStore();
 
   const height = board.length;
   const width = height > 0 ? board[0].length : 0;
 
   while (getIsPositionInBound(nextPosition, { width, height })) {
     if (getIsPieceEmpty(board[nextPosition[0]][nextPosition[1]])) {
-      emptyPositions.push(nextPosition);
+      store.insert({ from: curPosition, to: nextPosition });
+
       nextPosition = [
         nextPosition[0] + direction[0],
         nextPosition[1] + direction[1],
       ];
     } else break;
   }
-  return emptyPositions;
+  return store;
 };
 export default getConnectedEmptyPositions;

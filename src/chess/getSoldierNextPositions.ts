@@ -1,13 +1,12 @@
 import { Board } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getIsPieceFriendly from "./getIsPieceFriendly";
 import getIsPositionInBound from "./getIsPositionInBound";
 
-const getSoldierNextPositions = (board: Board, piecePosition: Position) => [
-  ...getSoldierMarchPositions(board, piecePosition),
-  ...getSoldierSidePositions(board, piecePosition),
-];
+const getSoldierNextPositions = (board: Board, piecePosition: Position) => 
+  getSoldierMarchPositions(board, piecePosition).join(getSoldierSidePositions(board, piecePosition));
 
 const getIsSolderTargetSteppable = (
   board: Board,
@@ -21,16 +20,19 @@ const getIsSolderTargetSteppable = (
 };
 
 const getSoldierMarchPositions = (board: Board, piecePos: Position) => {
+  const store = new PositionStore();
   const curPiece = board[piecePos[0]][piecePos[1]];
   const marchStep = isUpper(curPiece) ? 1 : -1;
   const marchPos: Position = [piecePos[0] + marchStep, piecePos[1]];
 
-  if (!getIsSolderTargetSteppable(board, curPiece, marchPos)) return [];
+  if (!getIsSolderTargetSteppable(board, curPiece, marchPos)) return store;
 
-  return [marchPos];
+  store.insert({ from: piecePos, to: marchPos });
+  return store;
 };
 
 const getSoldierSidePositions = (board: Board, piecePos: Position) => {
+  const store = new PositionStore();
   const curPiece = board[piecePos[0]][piecePos[1]];
   let isSideable = false;
 
@@ -38,19 +40,18 @@ const getSoldierSidePositions = (board: Board, piecePos: Position) => {
 
   if (!isUpper(curPiece) && piecePos[0] < 5) isSideable = true;
 
-  if (!isSideable) return [];
+  if (!isSideable) return store;
 
   const leftPos: Position = [piecePos[0], piecePos[1] - 1];
-  const rightPost: Position = [piecePos[0], piecePos[1] + 1];
-  const sidePositions = [];
+  const rightPos: Position = [piecePos[0], piecePos[1] + 1];
 
   if (getIsSolderTargetSteppable(board, curPiece, leftPos))
-    sidePositions.push(leftPos);
+    store.insert({ from: piecePos, to: leftPos });
 
-  if (getIsSolderTargetSteppable(board, curPiece, rightPost))
-    sidePositions.push(rightPost);
+  if (getIsSolderTargetSteppable(board, curPiece, rightPos))
+    store.insert({ from: piecePos, to: rightPos });
 
-  return sidePositions;
+  return store;
 };
 const isUpper = (char: string) => {
   return char == char.toUpperCase() && char != char.toLowerCase();

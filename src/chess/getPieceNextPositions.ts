@@ -1,5 +1,7 @@
 import { Board, Piece } from "../types";
-import { Position } from "./types";
+import { Move, Position } from "./types";
+import { PositionStore } from "./PositionStore";
+
 import getCastleNextPositions from "./getCastlePositions";
 import getCannonNextPositions from "./getCannonNextPositions";
 import getGeneralNextPositions from "./getGeneralNextPositions";
@@ -8,7 +10,7 @@ import getJumboNextPositions from "./getJumboNextPositions";
 import getKnightNextPositions from "./getKnightNextPositions";
 import getSoldierNextPositions from "./getSoldierNextPositions";
 
-type Callback = (board: Board, piecePosition: Position) => Array<Position>;
+type Callback = (board: Board, piecePosition: Position) => PositionStore<Move>;
 
 const getPieceNextPositions = (board: Board, piecePosition: Position) => {
   const funcs: Record<Piece, Callback> = {

@@ -1,24 +1,25 @@
 import { Board } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import { getGeneralInBound as getKnightInBound } from "./getGeneralNextPositions";
 
 import getIsPieceFriendly from "./getIsPieceFriendly";
 
 const getKnightNextPositions = (board: Board, piecePosition: Position) => {
-  const [bottom_left, bottom_right] = [
+  const [bottomLeft, bottomRight] = [
     [1, -1],
     [1, 1],
   ];
-  const [top_left, top_right] = [
+  const [topLeft, topRight] = [
     [-1, -1],
     [-1, 1],
   ];
-  const directions = [bottom_left, bottom_right, top_left, top_right];
+  const directions = [bottomLeft, bottomRight, topLeft, topRight];
 
   const curPiece = board[piecePosition[0]][piecePosition[1]];
 
-  const nextMoves: Array<Position> = [];
+  const store = new PositionStore();
   directions.map((direction) => {
     const nextPos: Position = [
       piecePosition[0] + direction[0],
@@ -27,11 +28,11 @@ const getKnightNextPositions = (board: Board, piecePosition: Position) => {
     const isInBound = getKnightInBound(curPiece, nextPos);
     if (isInBound) {
       const nextPiece = board[nextPos[0]][nextPos[1]];
-      if (!getIsPieceFriendly(curPiece, nextPiece)) nextMoves.push(nextPos);
+      if (!getIsPieceFriendly(curPiece, nextPiece)) store.insert({ from: piecePosition, to: nextPos });
     }
   });
 
-  return nextMoves;
+  return store;
 };
 
 export default getKnightNextPositions;

@@ -1,5 +1,6 @@
 import { Board } from "../types";
 import { Position } from "./types";
+import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
 import getIsPieceFriendly from "./getIsPieceFriendly";
@@ -8,22 +9,16 @@ import getIsPositionInBound from "./getIsPositionInBound";
 const getHorseNextPositions = (
   board: Board,
   piecePosition: Position
-): Array<Position> => {
-  const [left, right, top, bottom]: Array<Position> = [
+): PositionStore => {
+  const directions: Array<Position> = [
     [0, -1],
     [0, 1],
     [-1, 0],
     [1, 0],
   ];
-  const directions = [left, right, top, bottom];
 
-  let nextMoves: Array<Position> = [];
-  directions.map((direction) => {
-    nextMoves = [
-      ...nextMoves,
-      ...getHorseNextPositionsOnDirection(board, direction, piecePosition),
-    ];
-  });
+  const nextMoves = new PositionStore();
+  directions.map((direction) =>  nextMoves.join(getHorseNextPositionsOnDirection(board, direction, piecePosition)));
   return nextMoves;
 };
 
@@ -31,8 +26,9 @@ const getHorseNextPositionsOnDirection = (
   board: Board,
   dir: Position,
   pos: Position
-): Array<Position> => {
-  if (!getIsHorseCheckPositionEmpty(board, dir, pos)) return [];
+): PositionStore => {
+  const store = new PositionStore();
+  if (!getIsHorseCheckPositionEmpty(board, dir, pos)) return store;
 
   const targetOne: Position = [
     pos[0] + (dir[0] ? dir[0] * 2 : -1),
@@ -44,14 +40,13 @@ const getHorseNextPositionsOnDirection = (
   ];
   const curPiece = board[pos[0]][pos[1]];
 
-  const nextPositions: Array<Position> = [];
   if (getIsHorseTargetSteppable(board, curPiece, targetOne))
-    nextPositions.push(targetOne);
+    store.insert({ from: pos, to: targetOne });
 
   if (getIsHorseTargetSteppable(board, curPiece, targetTwo))
-    nextPositions.push(targetTwo);
+    store.insert({ from: pos, to: targetTwo });
 
-  return nextPositions;
+  return store;
 };
 
 export const getIsHorseCheckPositionEmpty = (
