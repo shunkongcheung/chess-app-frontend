@@ -132,8 +132,8 @@ class DataStore<T> {
 
       const diff = Math.abs(prevMid - mid);
       for(let idx = 0; idx < diff; idx ++){
-        if(prevMid > mid) pointer = pointer.prev;
-        else pointer = pointer.next;
+        if(prevMid > mid) pointer = pointer.prev!;
+        else pointer = pointer.next!;
       }
     }
 
