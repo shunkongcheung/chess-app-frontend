@@ -16,9 +16,9 @@ const getFriendlyPiecePositions = (
 
   board.map((row, rowIdx) => {
     row.map((piecePrefix, colIdx) => {
-      if (getIsPieceFriendly(myPiece, piecePrefix))
-        console.log("hello friendly", rowIdx, colIdx);
+      if (getIsPieceFriendly(myPiece, piecePrefix)){
         friendlyPositions.insert([rowIdx, colIdx]);
+      }
     });
   });
 

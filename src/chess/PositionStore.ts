@@ -15,6 +15,7 @@ export class PositionStore <T = Move>{
     if(!this._head) {
       this._head = { node };
       this._end = this._head;
+      return;
     }
 
     if(!this._end) {
@@ -31,11 +32,15 @@ export class PositionStore <T = Move>{
     }
     else if(!this._head) {
       this._head = anotherStore._head;
+      this._end = anotherStore._end;
       return this;
     }
     else {
-      if(!this._end) throw Error();
+      if(!this._end) {
+        throw Error();
+      }
       this._end.next = anotherStore._head;
+      this._end = anotherStore._end;
       return this;
     }
   }
