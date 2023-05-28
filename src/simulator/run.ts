@@ -9,7 +9,7 @@ import {
 
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
-import DataStore, { LinkedListNode } from "./DataStore";
+import DataStore from "./DataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
 type CallbackRet = void | boolean;
