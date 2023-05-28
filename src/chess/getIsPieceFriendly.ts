@@ -1,11 +1,8 @@
 import getIsPieceEmpty from "./getIsPieceEmpty";
+import { ChessNode } from "./types";
 
-const isUpper = (char: string) => {
-  return char == char.toUpperCase() && char != char.toLowerCase();
-};
-
-const getIsPieceFriendly = (curPiece: string, nextPiece: string) => {
+const getIsPieceFriendly = (curPiece: ChessNode, nextPiece: ChessNode) => {
   if (getIsPieceEmpty(nextPiece)) return false;
-  return isUpper(curPiece) === isUpper(nextPiece);
+  return curPiece.side === nextPiece.side;
 };
 export default getIsPieceFriendly;

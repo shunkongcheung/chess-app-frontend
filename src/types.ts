@@ -1,4 +1,4 @@
-export type Board = Array<Array<string>>;
+export type StringBoard = Array<Array<string>>;
 
 export enum Piece {
   EMPTY = "_",

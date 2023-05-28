@@ -1,12 +1,11 @@
 import React, { memo, useCallback } from "react";
 import styled from "styled-components";
 
-import { Board } from "../../types";
-import { Position } from "../../chess/types";
+import { ChessBoard, ChessNode, Position } from "../../chess/types";
 import ChessPiece from "./ChessPiece";
 
 interface IProps {
-  board: Board;
+  board: ChessBoard;
   handleSelect?: (position: Position) => any;
   selectedChess?: Position;
 }
@@ -34,12 +33,13 @@ const ChessBoard = ({ board, handleSelect, selectedChess }: IProps) => {
   const boardHeight = board.length;
 
   const renderBoardPiece = useCallback(
-    (pieceCode: string, rowIdx: number, colIdx: number) => {
+    (chessNode: ChessNode) => {
       const widthPercent = 100.0 / boardWidth;
       const handleClick = handleSelect
-        ? () => handleSelect([rowIdx, colIdx])
+        ? () => handleSelect(chessNode.position)
         : undefined;
 
+      const [rowIdx, colIdx] = chessNode.position;
       const isSelected =
         selectedChess &&
         rowIdx === selectedChess[0] &&
@@ -52,7 +52,8 @@ const ChessBoard = ({ board, handleSelect, selectedChess }: IProps) => {
         >
           <ChessPiece
             handleClick={handleClick}
-            pieceCode={pieceCode}
+            piece={chessNode.piece}
+            side={chessNode.side}
             isSelected={isSelected || false}
           />
         </PieceContainer>
@@ -62,7 +63,7 @@ const ChessBoard = ({ board, handleSelect, selectedChess }: IProps) => {
   );
 
   const renderBoardRow = useCallback(
-    (row: Array<string>, rowIdx) => {
+    (row: Array<ChessNode>, rowIdx) => {
       const rowHeightPercent = 100.0 / boardHeight;
       return (
         <div
@@ -73,8 +74,8 @@ const ChessBoard = ({ board, handleSelect, selectedChess }: IProps) => {
             height: `${rowHeightPercent}%`,
           }}
         >
-          {row.map((pieceCode, colIdx: number) =>
-            renderBoardPiece(pieceCode, rowIdx, colIdx)
+          {row.map((pieceCode: ChessNode) =>
+            renderBoardPiece(pieceCode)
           )}
         </div>
       );

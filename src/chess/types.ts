@@ -1,3 +1,5 @@
+import { Piece, Side } from "../types";
+
 export type Position = [number, number];
 
 export interface Move {
@@ -10,3 +12,11 @@ export enum BoardPieceCount {
   LtTwoThird,
   GteTwoThird,
 }
+
+export interface ChessNode {
+  position: Position;
+  piece : Piece;
+  side: Side;
+}
+
+export type ChessBoard = Array<Array<ChessNode>>;

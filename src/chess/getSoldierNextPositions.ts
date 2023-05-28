@@ -1,36 +1,28 @@
-import { Board } from "../types";
-import { Position } from "./types";
+import { Side } from "../types";
+import { ChessBoard, ChessNode, Position } from "./types";
 
 import getIsPieceFriendly from "./getIsPieceFriendly";
 import getIsPositionInBound from "./getIsPositionInBound";
 
-const getSoldierNextPositions = (board: Board, piecePosition: Position) => [
-  ...getSoldierMarchPositions(board, piecePosition),
-  ...getSoldierSidePositions(board, piecePosition),
+const getSoldierNextPositions = (board: ChessBoard, curPiece: ChessNode) => [
+  ...getSoldierMarchPositions(board, curPiece),
+  ...getSoldierSidePositions(board, curPiece),
 ];
 
 const getIsSolderTargetSteppable = (
-  board: Board,
-  curPiece: string,
-  targetPos: Position
+  curPiece: ChessNode,
+  targetPiece: ChessNode
 ) => {
-  if (!getIsPositionInBound(targetPos)) return false;
-
-  const targetPiece = board[targetPos[0]][targetPos[1]];
-  return !getIsPieceFriendly(curPiece, targetPiece);
 };
 
-const getSoldierMarchPositions = (board: Board, piecePos: Position) => {
-  const curPiece = board[piecePos[0]][piecePos[1]];
-  const marchStep = isUpper(curPiece) ? 1 : -1;
-  const marchPos: Position = [piecePos[0] + marchStep, piecePos[1]];
-
-  if (!getIsSolderTargetSteppable(board, curPiece, marchPos)) return [];
-
-  return [marchPos];
+const getSoldierMarchPositions = (board: ChessBoard, curPiece: ChessNode) => {
+  const marchStep = curPiece.side === Side.Top ? 1 : -1;
+  const marchPos: Position = [curPiece.position[0] + marchStep, curPiece.position[1]];
+  if (!getIsPositionInBound(marchPos)) return [];
+  return !getIsPieceFriendly(curPiece, board[marchPos[0]][marchPos[1]]) ? [board[marchPos[0]][marchPos[1]]] : [];
 };
 
-const getSoldierSidePositions = (board: Board, piecePos: Position) => {
+const getSoldierSidePositions = (board: ChessBoard, curPiece: Position) => {
   const curPiece = board[piecePos[0]][piecePos[1]];
   let isSideable = false;
 

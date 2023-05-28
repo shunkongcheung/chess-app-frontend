@@ -1,5 +1,5 @@
-import { Board, Piece } from "../types";
-import { Position } from "./types";
+import { Piece } from "../types";
+import { ChessBoard, Position } from "./types";
 import getCastleNextPositions from "./getCastlePositions";
 import getCannonNextPositions from "./getCannonNextPositions";
 import getGeneralNextPositions from "./getGeneralNextPositions";
@@ -8,9 +8,9 @@ import getJumboNextPositions from "./getJumboNextPositions";
 import getKnightNextPositions from "./getKnightNextPositions";
 import getSoldierNextPositions from "./getSoldierNextPositions";
 
-type Callback = (board: Board, piecePosition: Position) => Array<Position>;
+type Callback = (board: ChessBoard, piecePosition: Position) => Array<Position>;
 
-const getPieceNextPositions = (board: Board, piecePosition: Position) => {
+const getPieceNextPositions = (board: ChessBoard, piecePosition: Position) => {
   const funcs: Record<Piece, Callback> = {
     [Piece.EMPTY]: getCastleNextPositions,
     [Piece.CASTLE]: getCastleNextPositions,
@@ -21,9 +21,8 @@ const getPieceNextPositions = (board: Board, piecePosition: Position) => {
     [Piece.KNIGHT]: getKnightNextPositions,
     [Piece.SOLDIER]: getSoldierNextPositions,
   };
-  const piecePrefix = board[piecePosition[0]][
-    piecePosition[1]
-  ].toUpperCase() as Piece;
+  const [row, col] = piecePosition;
+  const piecePrefix = board[row][col].piece;
   const pieceFunc = funcs[piecePrefix];
 
   return pieceFunc(board, piecePosition);

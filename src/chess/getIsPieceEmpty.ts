@@ -1,5 +1,6 @@
 import { Piece } from "../types";
+import { ChessNode } from "./types"
 
-const getIsPieceEmpty = (piece: string): boolean => piece == Piece.EMPTY;
+const getIsPieceEmpty = (chessNode: ChessNode): boolean => chessNode.piece == Piece.EMPTY;
 
 export default getIsPieceEmpty;

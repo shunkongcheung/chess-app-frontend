@@ -1,11 +1,10 @@
-import { Board } from "../types";
-import { Move } from "./types";
+import { ChessBoard, Move } from "./types";
 
 import getFriendlyPiecePositions from "./getFriendlyPiecePositions";
 import getPieceNextPositions from "./getPieceNextPositions";
 
 const getAllNextPositions = (
-  board: Board,
+  board: ChessBoard,
   isUpperSide: boolean
 ): Array<Move> => {
   const positions = getFriendlyPiecePositions(board, isUpperSide);

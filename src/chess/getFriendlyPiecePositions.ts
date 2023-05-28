@@ -1,26 +1,16 @@
-import { Board, Piece } from "../types";
-import { Position } from "./types";
-
-import getIsPieceFriendly from "./getIsPieceFriendly";
+import { Side } from "../types";
+import { ChessBoard, Position } from "./types";
 
 const getFriendlyPiecePositions = (
-  board: Board,
+  board: ChessBoard,
   isUpperSide: boolean
 ): Array<Position> => {
-  const friendlyPositions: Array<Position> = [];
-
-  const myPiece = isUpperSide
-    ? Piece.GENERAL.toUpperCase()
-    : Piece.GENERAL.toLowerCase();
-
-  board.map((row, rowIdx) => {
-    row.map((piecePrefix, colIdx) => {
-      if (getIsPieceFriendly(myPiece, piecePrefix))
-        friendlyPositions.push([rowIdx, colIdx]);
-    });
-  });
-
-  return friendlyPositions;
+  return board.map(row => row.filter(({ side }) => {
+    const nodeIsUpper = side === Side.Top;
+    return nodeIsUpper === isUpperSide;
+  }))
+  .flat()
+  .map(({ position }) => position);
 };
 
 export default getFriendlyPiecePositions;

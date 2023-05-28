@@ -1,8 +1,11 @@
 import React, { memo, useCallback, useMemo } from "react";
 import styled, { keyframes } from "styled-components";
 
+import { Piece, Side } from "../../types";
+
 interface IProps {
-  pieceCode: string;
+  piece: Piece;
+  side: Side;
   handleClick?: () => any;
   isSelected: boolean;
 }
@@ -25,7 +28,7 @@ const Container = styled.img<{ disable: boolean; isSelected: boolean }>`
     infinite;
 `;
 
-const ChessPiece = ({ pieceCode, handleClick, isSelected }: IProps) => {
+const ChessPiece = ({ piece, side, handleClick, isSelected }: IProps) => {
   const getPieceOffset = useCallback((pieceCode: string) => {
     const codeOrder = ["g", "k", "j", "c", "h", "a", "s"];
     return codeOrder.findIndex((item) => item === pieceCode);
@@ -33,9 +36,8 @@ const ChessPiece = ({ pieceCode, handleClick, isSelected }: IProps) => {
 
   const background = useMemo(() => {
     let [hOffset, vOffset] = [0, 0];
-    const pLower = pieceCode.toLowerCase();
-    if (pieceCode === pLower) vOffset = 100;
-    hOffset = getPieceOffset(pLower);
+    if (side === Side.Bottom) vOffset = 100;
+    hOffset = getPieceOffset(piece);
 
     const bgPosition = `${(100.0 / 7 + 2.4) * hOffset}% ${vOffset}%`;
     const bgSize = "700% 200%";
@@ -43,7 +45,7 @@ const ChessPiece = ({ pieceCode, handleClick, isSelected }: IProps) => {
       hOffset >= 0 ? `url("/chess-pieces.png") ${bgPosition} / ${bgSize}` : "";
 
     return background;
-  }, [getPieceOffset, pieceCode]);
+  }, [getPieceOffset, piece, side]);
 
   return (
     <Container
