@@ -1,5 +1,5 @@
 import { Board, Piece } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
@@ -8,6 +8,7 @@ import getIsPositionInBound from "./getIsPositionInBound";
 
 const getGeneralNextPositions = (
   board: Board,
+  positionBoard: PositionBoard,
   piecePosition: Position
 ): PositionStore => {
   const directions: Array<Position> = [
@@ -27,16 +28,17 @@ const getGeneralNextPositions = (
     const isInBound = getGeneralInBound(curPiece, nextPos);
     if (isInBound) {
       const nextPiece = board[nextPos[0]][nextPos[1]];
-      if (!getIsPieceFriendly(curPiece, nextPiece)) nextMoves.insert({ from: piecePosition, to: nextPos });
+      if (!getIsPieceFriendly(curPiece, nextPiece)) nextMoves.insert({ from: piecePosition, to: positionBoard[nextPos[0]][nextPos[1]] });
     }
   });
 
-  nextMoves.join(getGeneralFlyPosition(board, piecePosition));
+  nextMoves.join(getGeneralFlyPosition(board, positionBoard, piecePosition));
   return nextMoves;
 };
 
 const getGeneralFlyPosition = (
   board: Board,
+  positionBoard: PositionBoard,
   piecePosition: Position
 ): PositionStore => {
   const store = new PositionStore();
@@ -62,7 +64,7 @@ const getGeneralFlyPosition = (
   if (isUpper(board[curPos[0]][curPos[1]]) === isUpper(curPiece)) return store;
 
   // fly to opponent's general
-  store.insert({ from: piecePosition, to: curPos });
+  store.insert({ from: piecePosition, to: positionBoard[curPos[0]][curPos[1]]  });
   return store;
 };
 

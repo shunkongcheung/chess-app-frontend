@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import {
@@ -9,7 +9,7 @@ import {
 
 import getIsPositionInBound from "./getIsPositionInBound";
 
-const getJumboNextPositions = (board: Board, piecePosition: Position) => {
+const getJumboNextPositions = (board: Board, positionBoard: PositionBoard, piecePosition: Position) => {
   const directions: Array<Position> = [
     [-1, -1],
     [-1, 1],
@@ -18,12 +18,13 @@ const getJumboNextPositions = (board: Board, piecePosition: Position) => {
   ];
 
   const store = new PositionStore();
-  directions.map((direction) => store.join(getJumboNextPositionsOnDirection(board, direction, piecePosition)));
+  directions.map((direction) => store.join(getJumboNextPositionsOnDirection(board, positionBoard, direction, piecePosition)));
   return store;
 };
 
 const getJumboNextPositionsOnDirection = (
   board: Board,
+  positionBoard: PositionBoard,
   dir: Position,
   pos: Position
 ) => {
@@ -37,7 +38,7 @@ const getJumboNextPositionsOnDirection = (
 
   if (!getIsJumboTargetSteppable(board, curPiece, target)) return store;
 
-  store.insert({ from: pos, to: target });
+  store.insert({ from: pos, to: positionBoard[target[0]][target[1]] });
   return store;
 };
 

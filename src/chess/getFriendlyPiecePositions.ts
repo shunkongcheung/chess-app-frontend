@@ -1,11 +1,12 @@
 import { Board, Piece } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getIsPieceFriendly from "./getIsPieceFriendly";
 
 const getFriendlyPiecePositions = (
   board: Board,
+  positionBoard: PositionBoard,
   isUpperSide: boolean
 ): PositionStore<Position> => {
   const friendlyPositions = new PositionStore<Position>();
@@ -17,7 +18,7 @@ const getFriendlyPiecePositions = (
   board.map((row, rowIdx) => {
     row.map((piecePrefix, colIdx) => {
       if (getIsPieceFriendly(myPiece, piecePrefix)){
-        friendlyPositions.insert([rowIdx, colIdx]);
+        friendlyPositions.insert(positionBoard[rowIdx][colIdx]);
       }
     });
   });

@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
@@ -8,6 +8,7 @@ import getIsPositionInBound from "./getIsPositionInBound";
 
 const getHorseNextPositions = (
   board: Board,
+  positionBoard: PositionBoard,
   piecePosition: Position
 ): PositionStore => {
   const directions: Array<Position> = [
@@ -18,12 +19,13 @@ const getHorseNextPositions = (
   ];
 
   const nextMoves = new PositionStore();
-  directions.map((direction) =>  nextMoves.join(getHorseNextPositionsOnDirection(board, direction, piecePosition)));
+  directions.map((direction) =>  nextMoves.join(getHorseNextPositionsOnDirection(board, positionBoard, direction, piecePosition)));
   return nextMoves;
 };
 
 const getHorseNextPositionsOnDirection = (
   board: Board,
+  positionBoard: PositionBoard,
   dir: Position,
   pos: Position
 ): PositionStore => {
@@ -41,10 +43,10 @@ const getHorseNextPositionsOnDirection = (
   const curPiece = board[pos[0]][pos[1]];
 
   if (getIsHorseTargetSteppable(board, curPiece, targetOne))
-    store.insert({ from: pos, to: targetOne });
+    store.insert({ from: pos, to: positionBoard[targetOne[0]][targetOne[1]] });
 
   if (getIsHorseTargetSteppable(board, curPiece, targetTwo))
-    store.insert({ from: pos, to: targetTwo });
+    store.insert({ from: pos, to: positionBoard[targetTwo[0]][targetTwo[1]] });
 
   return store;
 };

@@ -1,12 +1,12 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import { getGeneralInBound as getKnightInBound } from "./getGeneralNextPositions";
 
 import getIsPieceFriendly from "./getIsPieceFriendly";
 
-const getKnightNextPositions = (board: Board, piecePosition: Position) => {
+const getKnightNextPositions = (board: Board, positionBoard: PositionBoard, piecePosition: Position) => {
   const [bottomLeft, bottomRight] = [
     [1, -1],
     [1, 1],
@@ -28,7 +28,7 @@ const getKnightNextPositions = (board: Board, piecePosition: Position) => {
     const isInBound = getKnightInBound(curPiece, nextPos);
     if (isInBound) {
       const nextPiece = board[nextPos[0]][nextPos[1]];
-      if (!getIsPieceFriendly(curPiece, nextPiece)) store.insert({ from: piecePosition, to: nextPos });
+      if (!getIsPieceFriendly(curPiece, nextPiece)) store.insert({ from: piecePosition, to: positionBoard[nextPos[0]][nextPos[1]] });
     }
   });
 

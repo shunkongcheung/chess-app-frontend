@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getConnectedEmptyPositions from "./getConnectedEmptyPositions";
@@ -8,6 +8,7 @@ import getIsPositionInBound from "./getIsPositionInBound";
 
 const getCastleNextPositions = (
   board: Board,
+  positionBoard: PositionBoard,
   piecePosition: Position
 ): PositionStore => {
   const [left, right, top, bottom]: Array<Position> = [
@@ -25,6 +26,7 @@ const getCastleNextPositions = (
     // all empty positions
     const emptyPositions = getConnectedEmptyPositions(
       board,
+      positionBoard,
       piecePosition,
       direction
     );
@@ -40,7 +42,7 @@ const getCastleNextPositions = (
     // if tip is an opponent.
     if (getIsPositionInBound(tip)) {
       const tipPiece = board[tip[0]][tip[1]];
-      if (getIsPieceOpponent(curPiece, tipPiece)) nextMoves.insert({ from: piecePosition, to: tip });
+      if (getIsPieceOpponent(curPiece, tipPiece)) nextMoves.insert({ from: piecePosition, to: positionBoard[tip[0]][tip[1]] });
     }
   });
 

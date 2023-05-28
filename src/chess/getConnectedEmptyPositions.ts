@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getIsPieceEmpty from "./getIsPieceEmpty";
@@ -9,6 +9,7 @@ type Direction = [number, number];
 
 const getConnectedEmptyPositions = (
   board: Board,
+  positionBoard: PositionBoard,
   curPosition: Position,
   direction: Direction
 ): PositionStore => {
@@ -25,7 +26,7 @@ const getConnectedEmptyPositions = (
 
   while (getIsPositionInBound(nextPosition, { width, height })) {
     if (getIsPieceEmpty(board[nextPosition[0]][nextPosition[1]])) {
-      store.insert({ from: curPosition, to: nextPosition });
+      store.insert({ from: curPosition, to: positionBoard[nextPosition[0]][nextPosition[1]] });
 
       nextPosition = [
         nextPosition[0] + direction[0],

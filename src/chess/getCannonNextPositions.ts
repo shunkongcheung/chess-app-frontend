@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Position } from "./types";
+import { Position, PositionBoard } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getConnectedEmptyPositions from "./getConnectedEmptyPositions";
@@ -9,6 +9,7 @@ import getIsPositionInBound from "./getIsPositionInBound";
 
 const getCannonNextPositions = (
   board: Board,
+  positionBoard: PositionBoard,
   piecePosition: Position
 ): PositionStore => {
   const directions: Array<Position> = [
@@ -24,6 +25,7 @@ const getCannonNextPositions = (
     // all empty positions
     const emptyPositions = getConnectedEmptyPositions(
       board,
+      positionBoard,
       piecePosition,
       direction
     );
@@ -37,13 +39,14 @@ const getCannonNextPositions = (
     tip = [tip[0] + direction[0], tip[1] + direction[1]];
 
     /// if cannon target opponent.
-    nextMoves.join(getCannonTarget(board, curPiece, direction, piecePosition, tip));
+    nextMoves.join(getCannonTarget(board, positionBoard, curPiece, direction, piecePosition, tip));
   });
   return nextMoves;
 };
 
 const getCannonTarget = (
   board: Board,
+  positionBoard: PositionBoard,
   oriPiece: string,
   dir: Position,
   from: Position,
@@ -56,7 +59,7 @@ const getCannonTarget = (
     const curPiece = board[curPos[0]][curPos[1]];
     if (getIsPieceFriendly(oriPiece, curPiece)) break;
     if (getIsPieceOpponent(oriPiece, curPiece)) {
-      store.insert({ from, to: curPos });
+      store.insert({ from, to: positionBoard[curPos[0]][curPos[1]] });
       break;
     }
 

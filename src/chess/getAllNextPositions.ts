@@ -1,5 +1,5 @@
 import { Board } from "../types";
-import { Move } from "./types";
+import { Move, Position } from "./types";
 import { PositionStore } from "./PositionStore";
 
 import getFriendlyPiecePositions from "./getFriendlyPiecePositions";
@@ -9,10 +9,11 @@ const getAllNextPositions = (
   board: Board,
   isUpperSide: boolean
 ): Array<Move> => {
-  const positions = getFriendlyPiecePositions(board, isUpperSide);
+  const positionBoard = board.map((row, rowIdx) => row.map((_, colIdx) => [rowIdx, colIdx] as Position));
+  const positions = getFriendlyPiecePositions(board, positionBoard, isUpperSide);
 
   const nextMoves = new PositionStore();
-  positions.forEach((position) => nextMoves.join(getPieceNextPositions(board, position)));
+  positions.forEach((position) => nextMoves.join(getPieceNextPositions(board, positionBoard, position)));
   
   return nextMoves.asArray();
 };
