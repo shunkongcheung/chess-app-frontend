@@ -1,52 +1,49 @@
 // import { getHashFromBoard } from "../chess";
 import { getLogFormatter } from "../utils/Logger";
 
-export interface LinkedListNode<T> {
+export interface StoreNode<T> {
   node: T;
-  prev?: LinkedListNode<T>;
-  next?: LinkedListNode<T>;
+  prev?: StoreNode<T>;
+  next?: StoreNode<T>;
 }
 
 type Sorter<T> = (left: T, right: T) => number;
+type Filter<T> = (node: T) => boolean;
 
 type GetKeyFromNode<T> = (node: T) => string;
-
-// interface HashMap<T> {
-//   [x: string]: LinkedListNode<T>;
-// }
 
 const logFormatter = getLogFormatter("DataStore");
 
 class DataStore<T> {
   private _count: number;
   private _getKeyFromNode: GetKeyFromNode<T>;
-  // private _hashMap: HashMap<T>;
-  private _hashMap: Map<string, LinkedListNode<T>>;
-  private _head: LinkedListNode<T>;
+  private _hashMap: Map<string, StoreNode<T>>;
+  private _head: StoreNode<T>;
   private _sorter: Sorter<T>;
+  private _filter: Filter<T>;
 
   public constructor(
     getKeyFromNode: GetKeyFromNode<T>,
     sorter: Sorter<T>,
+    filter: Filter<T>,
     nodes: Array<T>
   ) {
     this._count = nodes.length;
     this._getKeyFromNode = getKeyFromNode;
     this._sorter = sorter;
-    // this._hashMap = {};
+    this._filter = filter;
+
     this._hashMap = new Map();
     const openSet = [...nodes].sort(sorter);
     this._head = { node: openSet[0] };
 
     let prev = this._head;
     this._hashMap.set(getKeyFromNode(openSet[0]), this._head);
-    // this._hashMap[getKeyFromNode(openSet[0])] = this._head;
 
     for (let idx = 1; idx < openSet.length; idx++) {
       const listNode = { node: openSet[idx], prev };
       prev.next = listNode;
       this._hashMap.set(getKeyFromNode(openSet[idx]), listNode);
-      // this._hashMap[getKeyFromNode(openSet[idx])] = listNode;
       prev = listNode;
     }
   }
@@ -55,9 +52,15 @@ class DataStore<T> {
     return this._count;
   }
 
-  get head() {
-    return this._head;
-  }
+  get head (): T | undefined {
+    let head = this._head;
+    while (true) {
+      if (this._filter(head.node))
+        return head.node;
+      if (head.next) head = head.next;
+      else return undefined;
+    }
+  };
 
   public asArray(): Array<T> {
     let head = this._head;
@@ -72,7 +75,6 @@ class DataStore<T> {
   public getNode(node: T): T | undefined {
     const key = this._getKeyFromNode(node);
     return this._hashMap.get(key)?.node;
-    // return this._hashMap[key]?.node;
   }
 
   public insert(node: T): T {
@@ -80,7 +82,7 @@ class DataStore<T> {
       throw Error(logFormatter("node already exists"));
     }
 
-    const linkedListNode: LinkedListNode<T> = { node };
+    const linkedListNode: StoreNode<T> = { node };
     const key = this._getKeyFromNode(node);
     this._hashMap.set(key, linkedListNode);
 

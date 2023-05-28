@@ -9,7 +9,7 @@ import {
 
 import getPriorityScore from "./getPriorityScore";
 import nodeSorter from "./nodeSorter";
-import DataStore, { LinkedListNode } from "./DataStore";
+import DataStore from "./DataStore";
 import { PSEUDO_HIGH_PRIORITY } from "../constants";
 
 type CallbackRet = void | boolean;
@@ -43,6 +43,8 @@ interface InternalRet extends Omit<Ret, "openSet"> {
   openSetStore: DataStore<BoardNode>;
 }
 
+const nodeFilter = (node: BoardNode) => !node.isTerminated && node.isOpenForCalculation;
+
 const run = async ({
   isAutoHandleL1,
   callbackInterval = 1000,
@@ -63,6 +65,7 @@ const run = async ({
   const openSetStore = new DataStore<BoardNode>(
     getKeyFromNode,
     nodeSorter,
+    nodeFilter,
     openSet
   );
 
@@ -81,6 +84,7 @@ const run = async ({
     ret.openSetStore = new DataStore<BoardNode>(
       getKeyFromNode,
       nodeSorter,
+      nodeFilter,
       oneRunOpenSetArr
     );
   }
@@ -99,43 +103,34 @@ const run = async ({
   }
 
   // before returning, ensure no level 1 node is at PSEUDO_HIGH_PRIORITY
-  while (isAutoHandleL1 && getIsL1InPseudoPriority(ret.openSetStore.head)) {
-    ret = runHelper({ ...args, openSetStore: ret.openSetStore });
-    runTimes++;
-  }
+  // while (isAutoHandleL1 && getIsL1InPseudoPriority(ret.openSetStore.head)) {
+  //   ret = runHelper({ ...args, openSetStore: ret.openSetStore });
+  //   runTimes++;
+  // }
 
   const { openSetStore: retOpenSetStore, ...rest } = ret;
   return { ...rest, openSet: retOpenSetStore.asArray() };
 };
 
-const getPointer = (head: LinkedListNode<BoardNode>): BoardNode | undefined => {
-  while (true) {
-    if (!head.node.isTerminated && head.node.isOpenForCalculation)
-      return head.node;
-    if (head.next) head = head.next;
-    else return undefined;
-  }
-};
+// const getIsL1InPseudoPriority = (head: LinkedListNode<BoardNode>): boolean => {
+//   while (true) {
+//     const { node } = head;
+//     const isL1 = node.level === 1;
+//     const isPseudoPriority =
+//       !node.isTerminated && node.priority === PSEUDO_HIGH_PRIORITY;
+//     if (isL1 && isPseudoPriority) return true;
 
-const getIsL1InPseudoPriority = (head: LinkedListNode<BoardNode>): boolean => {
-  while (true) {
-    const { node } = head;
-    const isL1 = node.level === 1;
-    const isPseudoPriority =
-      !node.isTerminated && node.priority === PSEUDO_HIGH_PRIORITY;
-    if (isL1 && isPseudoPriority) return true;
-
-    if (head.next) head = head.next;
-    else return false;
-  }
-};
+//     if (head.next) head = head.next;
+//     else return false;
+//   }
+// };
 
 const runHelper = ({
   levelZeroScore,
   levelZeroSide,
   openSetStore,
 }: InternalArgs): InternalRet => {
-  const pointer = getPointer(openSetStore.head);
+  const pointer = openSetStore.head;
   if (!pointer) {
     return { openSetStore, nextNodes: [] };
   }
